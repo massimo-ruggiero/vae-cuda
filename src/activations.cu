@@ -1,5 +1,5 @@
-#include "activations.h"
-#include "utils.h"
+#include "activations.cuh"
+#include "utils.cuh"
 #include <cuda_runtime.h>
 #include <math.h>
 
@@ -9,7 +9,7 @@ __global__ void leaky_relu_forward_kernel(const float* Z,
                                           int size) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx < size) {
-        float z = Z[idx]
+        float z = Z[idx];
         A[idx] = (z > 0.0f) ? z : z * alpha;
     }
 }
@@ -47,55 +47,66 @@ __global__ void sigmoid_backward_kernel(const float* A,
     }
 }
 
-void leaky_relu_forward(const float* d_Z,
-                        float* d_A,
-                        float d_alpha,
-                        int size) {
-    const int blockSize = 256;
-    const int gridSize = (size + blockSize - 1) / blockSize;
-    DEBUG("Launching leaky_relu_forward_kernel...");
-    leaky_relu_forward_kernel<<<gridSize, blockSize>>>(d_Z, d_A, d_alpha, size);
+namespace activations {
 
-    CUDA_CHECK(cudaGetLastError());
-    CUDA_CHECK(cudaDeviceSynchronize());
-}
+    namespace leaky_relu {
 
-void leaky_relu_backward(const float* d_Z,
-                         const float* d_dA,
-                         float* d_dZ,
-                         float alpha,
-                         int size) {
-    const int blockSize = 256;
-    const int gridSize = (size + blockSize - 1) / blockSize;
-    DEBUG("Launching leaky_relu_backward_kernel...");
-    leaky_relu_backward_kernel<<<gridSize, blockSize>>>(d_Z, d_dA, d_dZ, d_alpha, size);
-
-    CUDA_CHECK(cudaGetLastError());
-    CUDA_CHECK(cudaDeviceSynchronize());
-}
-
-
-void sigmoid_forward(const float* d_Z,
+        void forward(const float* d_Z,
                      float* d_A,
+                     float d_alpha,
                      int size) {
-    const int blockSize = 256;
-    const int gridSize = (size + blockSize - 1) / blockSize;
-    DEBUG("Launching sigmoid_forward_kernel...");
-    sigmoid_forward_kernel<<<gridSize, blockSize>>>(d_Z, d_A, size);
+            const int blockSize = 256;
+            const int gridSize = (size + blockSize - 1) / blockSize;
+            DEBUG("Launching leaky_relu_forward_kernel...");
+            leaky_relu_forward_kernel<<<gridSize, blockSize>>>(d_Z, d_A, d_alpha, size);
 
-    CUDA_CHECK(cudaGetLastError());
-    CUDA_CHECK(cudaDeviceSynchronize());
-}
+            CUDA_CHECK(cudaGetLastError());
+            CUDA_CHECK(cudaDeviceSynchronize());
+        }
 
-void sigmoid_backward(const float* d_Z,
+        void backward(const float* d_Z,
                       const float* d_dA,
                       float* d_dZ,
+                      float d_alpha,
                       int size) {
-    const int blockSize = 256;
-    const int gridSize = (size + blockSize - 1) / blockSize;
-    DEBUG("Launching sigmoid_backward_kernel...");
-    sigmoid_backward_kernel<<<gridSize, blockSize>>>(d_Z, d_dA, d_dZ, size);
+            const int blockSize = 256;
+            const int gridSize = (size + blockSize - 1) / blockSize;
+            DEBUG("Launching leaky_relu_backward_kernel...");
+            leaky_relu_backward_kernel<<<gridSize, blockSize>>>(d_Z, d_dA, d_dZ, d_alpha, size);
 
-    CUDA_CHECK(cudaGetLastError());
-    CUDA_CHECK(cudaDeviceSynchronize());
-}
+            CUDA_CHECK(cudaGetLastError());
+            CUDA_CHECK(cudaDeviceSynchronize());
+        }
+
+    } // namespace leaky_relu
+
+    namespace sigmoid {
+
+        void forward(const float* d_Z,
+                    float* d_A,
+                    int size) {
+            const int blockSize = 256;
+            const int gridSize = (size + blockSize - 1) / blockSize;
+            DEBUG("Launching sigmoid_forward_kernel...");
+            sigmoid_forward_kernel<<<gridSize, blockSize>>>(d_Z, d_A, size);
+
+            CUDA_CHECK(cudaGetLastError());
+            CUDA_CHECK(cudaDeviceSynchronize());
+        }
+
+        void backward(const float* d_Z,
+                    const float* d_dA,
+                    float* d_dZ,
+                    int size) {
+            const int blockSize = 256;
+            const int gridSize = (size + blockSize - 1) / blockSize;
+            DEBUG("Launching sigmoid_backward_kernel...");
+            sigmoid_backward_kernel<<<gridSize, blockSize>>>(d_Z, d_dA, d_dZ, size);
+
+            CUDA_CHECK(cudaGetLastError());
+            CUDA_CHECK(cudaDeviceSynchronize());
+        }
+
+    } // namespace sigmoid
+
+} // namespace activations

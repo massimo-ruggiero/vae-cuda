@@ -10,4 +10,13 @@ namespace matmul {
                int K,
                int N);
 
+} // namespace matmul
+
+namespace transpose {
+
+    void naive(const float* A,
+               float* B,
+               int M,
+               int K);
+
 }

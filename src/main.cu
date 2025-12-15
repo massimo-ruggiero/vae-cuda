@@ -1,9 +1,9 @@
 #include <cstdio>
 #include <cuda_runtime.h>
 
-#include "utils.h"
-#include "matmul.h" 
-#include "linear.h"   
+#include "utils.cuh"
+#include "linear.cuh" 
+#include "activations.cuh"   
 
 static void print_matrix(const char* name,
                         const float* mat, 
@@ -23,7 +23,7 @@ int main() {
     const int D = 3;
     const int H = 4;
 
-    DEBUG("Matrix sizes: M=%d, K=%d, N=%d\n", M, K, N);
+    DEBUG("Matrix sizes: B=%d, D=%d, H=%d\n", B, D, H);
 
     // Host matrices 
     float h_X[B * D] = {
@@ -40,6 +40,10 @@ int main() {
     float h_b[H] = {1, 1, 1, 1};
     float h_Z[B * H];
 
+    float h_A_leaky[B * H];
+    float h_A_sigmoid[B * H];
+
+
     print_matrix("X", h_X, B, D);
     print_matrix("W", h_W, D, H);
     printf("b:\n");
@@ -52,6 +56,7 @@ int main() {
     float* d_W = nullptr;
     float* d_b = nullptr;
     float* d_Z = nullptr;
+    float* d_A = nullptr;
 
     // Allocate device memory
     DEBUG("Allocating device memory...\n");
@@ -59,6 +64,7 @@ int main() {
     CUDA_CHECK(cudaMalloc((void**)&d_W, D * H * sizeof(float)));
     CUDA_CHECK(cudaMalloc((void**)&d_b, H * sizeof(float)));
     CUDA_CHECK(cudaMalloc((void**)&d_Z, B * H * sizeof(float)));
+    CUDA_CHECK(cudaMalloc((void**)&d_A, B * H * sizeof(float)));
     
     // Copy matrices to device
     CUDA_CHECK(cudaMemcpy(d_X, h_X, B * D * sizeof(float), cudaMemcpyHostToDevice));
@@ -67,12 +73,29 @@ int main() {
 
     // Perform matrix multiplication
     DEBUG("Launching linear forward...\n");
-    linear_forward(d_X, d_W, d_b, d_Z, B, D, H);
+    linear::naive::forward(d_X, d_W, d_b, d_Z, B, D, H);
 
     // Copy result back to host
     CUDA_CHECK(cudaMemcpy(h_Z, d_Z, B * H * sizeof(float), cudaMemcpyDeviceToHost));
 
     print_matrix("Z", h_Z, B, H);
+    // --- LeakyReLU forward: A = leaky_relu(Z) ---
+    const float alpha = 0.1f;
+    DEBUG("Launching LeakyReLU forward...\n");
+    activations::leaky_relu::forward(d_Z, d_A, alpha, B * H);
+
+    // Copia A (LeakyReLU) su host e stampa
+    CUDA_CHECK(cudaMemcpy(h_A_leaky, d_A, B * H * sizeof(float), cudaMemcpyDeviceToHost));
+    print_matrix("A_leaky", h_A_leaky, B, H);
+
+    // --- Sigmoid forward: A = sigmoid(Z) ---
+    DEBUG("Launching Sigmoid forward...\n");
+    activations::sigmoid::forward(d_Z, d_A, B * H);
+
+    // Copia A (Sigmoid) su host e stampa
+    CUDA_CHECK(cudaMemcpy(h_A_sigmoid, d_A, B * H * sizeof(float), cudaMemcpyDeviceToHost));
+    print_matrix("A_sigmoid", h_A_sigmoid, B, H);
+
 
     // Free device memory
     DEBUG("Freeing device memory...\n");
@@ -80,6 +103,7 @@ int main() {
     CUDA_CHECK(cudaFree(d_W));
     CUDA_CHECK(cudaFree(d_b));
     CUDA_CHECK(cudaFree(d_Z));
+    CUDA_CHECK(cudaFree(d_A));
 
     return 0;
 }
