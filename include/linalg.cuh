@@ -8,15 +8,8 @@ namespace matmul {
                float* C, 
                int M, 
                int K,
-               int N);
+               int N,
+               bool transpose_A = false,
+               bool transpose_B = false);
 
 } // namespace matmul
-
-namespace transpose {
-
-    void naive(const float* A,
-               float* B,
-               int M,
-               int K);
-
-}

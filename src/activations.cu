@@ -3,6 +3,7 @@
 #include <cuda_runtime.h>
 #include <math.h>
 
+
 __global__ void leaky_relu_forward_kernel(const float* Z,
                                           float* A,
                                           float alpha,
@@ -94,14 +95,14 @@ namespace activations {
             CUDA_CHECK(cudaDeviceSynchronize());
         }
 
-        void backward(const float* d_Z,
+        void backward(const float* d_A,
                     const float* d_dA,
                     float* d_dZ,
                     int size) {
             const int blockSize = 256;
             const int gridSize = (size + blockSize - 1) / blockSize;
             DEBUG("Launching sigmoid_backward_kernel...");
-            sigmoid_backward_kernel<<<gridSize, blockSize>>>(d_Z, d_dA, d_dZ, size);
+            sigmoid_backward_kernel<<<gridSize, blockSize>>>(d_A, d_dA, d_dZ, size);
 
             CUDA_CHECK(cudaGetLastError());
             CUDA_CHECK(cudaDeviceSynchronize());

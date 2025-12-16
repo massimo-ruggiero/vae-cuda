@@ -62,18 +62,10 @@ namespace linear {
                       int input_dim,
                       int output_dim) {
             // d_dX
-            float* d_WT = nullptr;
-            CUDA_CHECK(cudaMalloc((void**)&d_WT, output_dim * input_dim * sizeof(float)));
-            transpose::naive(d_W, d_WT, input_dim, output_dim);
-            matmul::naive(d_dZ, d_WT, d_dX, batch_size, output_dim, input_dim);
-            CUDA_CHECK(cudaFree(d_WT));
+            matmul::naive(d_dZ, d_W, d_dX, batch_size, output_dim, input_dim, false, true);
             
             // d_dW
-            float* d_XT = nullptr;
-            CUDA_CHECK(cudaMalloc((void**)&d_XT, input_dim * batch_size * sizeof(float)));
-            transpose::naive(d_X, d_XT, batch_size, input_dim);
-            matmul::naive(d_XT, d_dZ, input_dim, batch_size, output_dim);
-            CUDA_CHECK(cudaFree(d_XT));
+            matmul::naive(d_X, d_dZ, d_dW, input_dim, batch_size, output_dim, true, false);
 
             // d_db
             const int blockSize = 256;
