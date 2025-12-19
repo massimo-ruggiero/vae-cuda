@@ -1,15 +1,18 @@
 #pragma once
+#include <curand_kernel.h>
 
 
 namespace reparametrization {
 
-    void init(int size, unsigned long long seed);
-
-    void destroy();
+    void init(curandStatePhilox4_32_10_t* d_states,
+              int size, 
+              unsigned long long seed);
 
     void forward(const float* d_mu,
                  const float* d_logvar,
                  float* z,
+                 float* d_epsilon,
+                 curandStatePhilox4_32_10_t* d_states,
                  int size);
 
     void backward(const float* d_dz,

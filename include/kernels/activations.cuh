@@ -7,14 +7,14 @@ namespace activations {
 
         void forward(const float* d_Z,
                     float* d_A,
-                    float d_alpha,
-                    int size);
+                    int size,
+                    float d_alpha = 0.2f);
 
         void backward(const float* d_Z,
                     const float* d_dA,
                     float* d_dZ,
-                    float alpha,
-                    int size);
+                    int size,
+                    float alpha = 0.2f);
 
     } // namespace leaky_relu
 

@@ -5,15 +5,15 @@
 
 
 __global__ void bce_forward_naive_kernel(const float* X,
-                                         const float* A,
+                                         const float* Z,
                                          float* bce_sum,
                                          int size,
                                          int batch_size) {                                        
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx < size) {
         float x = X[idx];
-        float a = A[idx];
-        float bce = fmaxf(a, 0.0f) - a * x + logf(1.0f + expf(-fabsf(a)));
+        float z = Z[idx];
+        float bce = fmaxf(z, 0.0f) - z * x + logf(1.0f + expf(-fabsf(z)));
 
         atomicAdd(bce_sum, bce / batch_size);
     }
@@ -52,8 +52,8 @@ __global__ void kl_backward_kernel(const float* mu,
                                    float beta) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx < size) {
-        dmu[idx] = beta * mu[idx];
-        dlogvar[idx] = beta * 0.5f * (expf(logvar[idx]) - 1.0f);
+        dmu[idx] += beta * mu[idx];
+        dlogvar[idx] += beta * 0.5f * (expf(logvar[idx]) - 1.0f);
     }
 }
 
@@ -120,7 +120,7 @@ namespace loss {
                 float* d_dmu,
                 float* d_dlogvar,
                 int size,
-                float beta) {
+                float beta = 1.0f) {
             const int blockSize = 256;
             const int gridSize = (size + blockSize - 1) / blockSize;
             DEBUG("Launching kl_backward_kernel...");

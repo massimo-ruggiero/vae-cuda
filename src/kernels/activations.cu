@@ -54,8 +54,8 @@ namespace activations {
 
         void forward(const float* d_Z,
                      float* d_A,
-                     float d_alpha,
-                     int size) {
+                     int size,
+                     float d_alpha) {
             const int blockSize = 256;
             const int gridSize = (size + blockSize - 1) / blockSize;
             DEBUG("Launching leaky_relu_forward_kernel...");
@@ -68,8 +68,8 @@ namespace activations {
         void backward(const float* d_Z,
                       const float* d_dA,
                       float* d_dZ,
-                      float d_alpha,
-                      int size) {
+                      int size,
+                      float d_alpha) {
             const int blockSize = 256;
             const int gridSize = (size + blockSize - 1) / blockSize;
             DEBUG("Launching leaky_relu_backward_kernel...");
@@ -96,9 +96,9 @@ namespace activations {
         }
 
         void backward(const float* d_A,
-                    const float* d_dA,
-                    float* d_dZ,
-                    int size) {
+                      const float* d_dA,
+                      float* d_dZ,
+                      int size) {
             const int blockSize = 256;
             const int gridSize = (size + blockSize - 1) / blockSize;
             DEBUG("Launching sigmoid_backward_kernel...");

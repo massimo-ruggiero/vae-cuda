@@ -6,8 +6,8 @@
 
 
 __global__ void init_states_kernel(curandStatePhilox4_32_10_t* states,
-                                   unsigned long long seed,
-                                   int size) {
+                                   int size,
+                                   unsigned long long seed) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx < size) {
         curand_init(seed, (unsigned long long)idx, 0ULL, &states[idx]);
@@ -48,44 +48,24 @@ __global__ void reparametrization_backward_kernel(const float* dz,
 }
 
 namespace reparametrization {
-    static curandStatePhilox4_32_10_t* d_states = nullptr;
-    static int g_size = 0;
 
-    void init(int size, unsigned long long seed) {
-        if (d_states) destroy();
-
-        g_size = size;
-        CUDA_CHECK(cudaMalloc(&d_states, g_size * sizeof(curandStatePhilox4_32_10_t)));
-
+    void init(curandStatePhilox4_32_10_t* d_states, 
+              int size, 
+              unsigned long long seed) {
         const int blockSize = 256;
-        const int gridSize = (g_size + blockSize - 1) / blockSize;
+        const int gridSize = (size + blockSize - 1) / blockSize;
         DEBUG("Initializing cuRAND Philox states...");
-        init_states_kernel<<<gridSize, blockSize>>>(d_states, seed, g_size);
+        init_states_kernel<<<gridSize, blockSize>>>(d_states, size, seed);
         
-        CUDA_CHECK(cudaGetLastError())
-    }
-
-    void destroy() {
-        if (d_states) {
-            CUDA_CHECK(cudaFree(d_states));
-            d_states = nullptr;
-        }
-        g_size = 0;
+        CUDA_CHECK(cudaGetLastError());
     }
 
     void forward(const float* d_mu,
                     const float* d_logvar,
                     float* d_z,
                     float* d_epsilon,
+                    curandStatePhilox4_32_10_t* d_states,
                     int size) {
-        if (!d_states) {
-            fprintf(stderr, "reparametrization::forward called without init()\n");
-            std::exit(1);
-        }
-        if (size != g_size) {
-            fprintf(stderr, "reparametrization::forward called with size mismatch\n");
-            std::exit(1);
-        }
 
         const int blockSize = 256;
         const int gridSize = (size + blockSize - 1) / blockSize;

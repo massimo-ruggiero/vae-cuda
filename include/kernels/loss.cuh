@@ -6,7 +6,7 @@ namespace loss {
     namespace forward {
 
         void naive(const float* d_X,
-                   const float* d_A
+                   const float* d_A,
                    const float* d_mu,
                    const float* d_logvar,
                    float* d_bce,
@@ -24,7 +24,7 @@ namespace loss {
         void bce(const float* d_X,
                  const float* d_X_hat,
                  float* d_dA,
-                 int size,);
+                 int size);
 
         void kl(const float* d_mu, 
                 const float* d_logvar,

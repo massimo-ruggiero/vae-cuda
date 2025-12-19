@@ -1,109 +1,90 @@
+#include <algorithm>
 #include <cstdio>
-#include <cuda_runtime.h>
+#include <string>
+#include <vector>
 
+#include "dataset.h"
+#include "trainer.cuh"
 #include "utils.cuh"
-#include "linear.cuh" 
-#include "activations.cuh"   
+#include "vae_buffers.cuh"
 
-static void print_matrix(const char* name,
-                        const float* mat, 
-                        int rows, 
-                        int cols) {
-    printf("%s (%dx%d):\n", name, rows, cols);
-    for (int i = 0; i < rows; ++i) {
-        for (int j = 0; j < cols; ++j) {
-            printf("%0.2f ", mat[i * cols + j]);
-        }
-        printf("\n");
+namespace {
+
+void run_checkpoint_inference(const TrainingConfig& config,
+                              const Dataset& dataset,
+                              const std::string& checkpoint_path) {
+    const int infer_batch = std::min(config.batch_size, dataset.N);
+    if (infer_batch <= 0) {
+        std::printf("No samples available for inference.\n");
+        return;
     }
+
+    VaeConfig vae_cfg = make_vae_config(config, dataset.D, false);
+    vae_cfg.max_batch_size = config.batch_size;
+    VaeModel model(vae_cfg);
+    model.load(checkpoint_path);
+
+    DeviceTensor d_input(static_cast<size_t>(infer_batch) * dataset.D);
+    DeviceTensor d_output(static_cast<size_t>(infer_batch) * dataset.D);
+
+    CUDA_CHECK(cudaMemcpy(d_input.data(),
+                          dataset.data,
+                          d_input.bytes(),
+                          cudaMemcpyHostToDevice));
+
+    model.reconstruct(d_input.data(), d_output.data(), infer_batch);
+
+    std::vector<float> recon(static_cast<size_t>(infer_batch) * dataset.D);
+    CUDA_CHECK(cudaMemcpy(recon.data(),
+                          d_output.data(),
+                          recon.size() * sizeof(float),
+                          cudaMemcpyDeviceToHost));
+    std::printf("Checkpoint inference completed for %d samples\n", infer_batch);
 }
 
-int main() {
-    const int B = 2;
-    const int D = 3;
-    const int H = 4;
+} // namespace
 
-    DEBUG("Matrix sizes: B=%d, D=%d, H=%d\n", B, D, H);
+int main(int argc, char** argv) {
+    const std::string dataset_path = (argc > 1) ? argv[1] : "data/train.bin";
+    const std::string checkpoint_path = (argc > 2) ? argv[2] : "vae_checkpoint.bin";
+    const std::string mode = (argc > 3) ? argv[3] : "train";
 
-    // Host matrices 
-    float h_X[B * D] = {
-        1, 2, 3,
-        4, 5, 6
-    };
+    Dataset dataset = load_dataset(dataset_path.c_str());
 
-    float h_W[D * H] = {
-        1,  2,  3,  4,
-        5,  6,  7,  8,
-        9, 10, 11, 12
-    };
+    TrainingConfig config;
+    config.epochs = 10;
+    config.batch_size = 128;
+    config.latent_dim = 64;
+    config.encoder_hidden_dims = {512, 256};
+    config.decoder_hidden_dims = {256, 512};
+    config.learning_rate = 1e-3f;
+    config.beta = 1.0f;
+    config.leaky_relu_alpha = 0.1f;
+    config.log_every = 50;
+    config.seed = 42ull;
+    config.checkpoint_path = checkpoint_path;
 
-    float h_b[H] = {1, 1, 1, 1};
-    float h_Z[B * H];
+    if (mode == "train") {
+        Trainer trainer(config, dataset.D);
+        trainer.fit(dataset);
+        trainer.save_weights(checkpoint_path);
 
-    float h_A_leaky[B * H];
-    float h_A_sigmoid[B * H];
+        const int preview_batch = std::min(config.batch_size, dataset.N);
+        if (preview_batch > 0) {
+            std::vector<float> recon(static_cast<size_t>(preview_batch) * dataset.D);
+            trainer.infer(dataset.data, preview_batch, recon.data());
+            std::printf("Preview inference completed for %d samples\n", preview_batch);
+        }
 
+        run_checkpoint_inference(config, dataset, checkpoint_path);
+    } else if (mode == "infer") {
+        run_checkpoint_inference(config, dataset, checkpoint_path);
+    } else {
+        std::fprintf(stderr, "Unknown mode '%s'. Use 'train' or 'infer'.\n", mode.c_str());
+        free_dataset(dataset);
+        return 1;
+    }
 
-    print_matrix("X", h_X, B, D);
-    print_matrix("W", h_W, D, H);
-    printf("b:\n");
-    for (int j = 0; j < H; ++j)
-        printf("%8.1f ", h_b[j]);
-    printf("\n");
-
-    // Allocate device memory
-    float* d_X = nullptr;
-    float* d_W = nullptr;
-    float* d_b = nullptr;
-    float* d_Z = nullptr;
-    float* d_A = nullptr;
-
-    // Allocate device memory
-    DEBUG("Allocating device memory...\n");
-    CUDA_CHECK(cudaMalloc((void**)&d_X, B * D * sizeof(float)));
-    CUDA_CHECK(cudaMalloc((void**)&d_W, D * H * sizeof(float)));
-    CUDA_CHECK(cudaMalloc((void**)&d_b, H * sizeof(float)));
-    CUDA_CHECK(cudaMalloc((void**)&d_Z, B * H * sizeof(float)));
-    CUDA_CHECK(cudaMalloc((void**)&d_A, B * H * sizeof(float)));
-    
-    // Copy matrices to device
-    CUDA_CHECK(cudaMemcpy(d_X, h_X, B * D * sizeof(float), cudaMemcpyHostToDevice));
-    CUDA_CHECK(cudaMemcpy(d_W, h_W, D * H * sizeof(float), cudaMemcpyHostToDevice));
-    CUDA_CHECK(cudaMemcpy(d_b, h_b, H * sizeof(float), cudaMemcpyHostToDevice));
-
-    // Perform matrix multiplication
-    DEBUG("Launching linear forward...\n");
-    linear::naive::forward(d_X, d_W, d_b, d_Z, B, D, H);
-
-    // Copy result back to host
-    CUDA_CHECK(cudaMemcpy(h_Z, d_Z, B * H * sizeof(float), cudaMemcpyDeviceToHost));
-
-    print_matrix("Z", h_Z, B, H);
-    // --- LeakyReLU forward: A = leaky_relu(Z) ---
-    const float alpha = 0.1f;
-    DEBUG("Launching LeakyReLU forward...\n");
-    activations::leaky_relu::forward(d_Z, d_A, alpha, B * H);
-
-    // Copia A (LeakyReLU) su host e stampa
-    CUDA_CHECK(cudaMemcpy(h_A_leaky, d_A, B * H * sizeof(float), cudaMemcpyDeviceToHost));
-    print_matrix("A_leaky", h_A_leaky, B, H);
-
-    // --- Sigmoid forward: A = sigmoid(Z) ---
-    DEBUG("Launching Sigmoid forward...\n");
-    activations::sigmoid::forward(d_Z, d_A, B * H);
-
-    // Copia A (Sigmoid) su host e stampa
-    CUDA_CHECK(cudaMemcpy(h_A_sigmoid, d_A, B * H * sizeof(float), cudaMemcpyDeviceToHost));
-    print_matrix("A_sigmoid", h_A_sigmoid, B, H);
-
-
-    // Free device memory
-    DEBUG("Freeing device memory...\n");
-    CUDA_CHECK(cudaFree(d_X));
-    CUDA_CHECK(cudaFree(d_W));
-    CUDA_CHECK(cudaFree(d_b));
-    CUDA_CHECK(cudaFree(d_Z));
-    CUDA_CHECK(cudaFree(d_A));
-
+    free_dataset(dataset);
     return 0;
 }

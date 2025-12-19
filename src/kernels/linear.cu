@@ -62,8 +62,10 @@ namespace linear {
                       int input_dim,
                       int output_dim) {
             // d_dX
-            matmul::naive(d_dZ, d_W, d_dX, batch_size, output_dim, input_dim, false, true);
-            
+            id (d_dX != nullptr) {
+                matmul::naive(d_dZ, d_W, d_dX, batch_size, output_dim, input_dim, false, true);
+            }
+
             // d_dW
             matmul::naive(d_X, d_dZ, d_dW, input_dim, batch_size, output_dim, true, false);
 

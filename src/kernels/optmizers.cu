@@ -10,10 +10,10 @@ __global__ void adam_step_kernel(const float* g,
                                  float* v,
                                  int t,
                                  int size,
-                                 float alpha,
-                                 float epsilon, 
+                                 float lr,
                                  float beta1,
-                                 float beta2) {
+                                 float beta2,
+                                 float epsilon) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx < size) {
         float g_val = g[idx];
@@ -26,7 +26,7 @@ __global__ void adam_step_kernel(const float* g,
         float m_hat = m_val / (1.0f - powf(beta1, (float)t));
         float v_hat = v_val / (1.0f - powf(beta2, (float)t));
 
-        theta[idx] -= alpha * m_hat / (sqrtf(v_hat) + epsilon);
+        theta[idx] -= lr * m_hat / (sqrtf(v_hat) + epsilon);
 
         m[idx] = m_val;
         v[idx] = v_val;
@@ -41,14 +41,14 @@ namespace adam {
               float* d_v,
               int t,
               int size,
-              float alpha,
-              float epsilon, 
+              float lr,
               float beta1,
-              float beta2) {
+              float beta2,
+              float epsilon) {
         const int blockSize = 256;
         const int gridSize = (size + blockSize - 1) / blockSize;
         DEBUG("Launching adam_step_kernel...");
-        adam_step_kernel<<<gridSize, blockSize>>>(d_g, d_theta, d_m, d_v, t, size, alpha, epsilon, beta1, beta2);
+        adam_step_kernel<<<gridSize, blockSize>>>(d_g, d_theta, d_m, d_v, t, size, lr, beta1, beta2, epsilon);
 
         CUDA_CHECK(cudaGetLastError());
     }
