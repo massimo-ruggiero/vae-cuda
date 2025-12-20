@@ -34,6 +34,15 @@ __global__ void matmul_naive_kernel(const float* A,
     }
 }
 
+__global__ void add_inplace_kernel(float* A, 
+                                   const float* B, 
+                                   int size) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx < size) {
+        A[idx] += B[idx];
+    }
+}
+
 namespace matmul {
 
     void naive(const float* d_A,
@@ -47,10 +56,21 @@ namespace matmul {
         dim3 blockSize(16, 16);
         dim3 gridSize((N + blockSize.x - 1) / blockSize.x,
                     (M + blockSize.y - 1) / blockSize.y);
-        DEBUG("Launching matmul_naive_kernel...");
+        //DEBUG("Launching matmul_naive_kernel...");
         matmul_naive_kernel<<<gridSize, blockSize>>>(d_A, d_B, d_C, M, K, N, transpose_A, transpose_B);
 
         CUDA_CHECK(cudaGetLastError());
     } 
     
 } // namespace matmul
+
+void add_in_place(float* d_A, 
+                  const float* d_B, 
+                  int size) {
+    const int blockSize = 256;
+    const int gridSize  = (size + blockSize - 1) / blockSize;
+    //DEBUG("Launching add_inplace_kernel...");
+    add_inplace_kernel<<<gridSize, blockSize>>>(d_A, d_B, size);
+
+    CUDA_CHECK(cudaGetLastError());
+} 

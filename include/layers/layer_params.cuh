@@ -96,7 +96,7 @@ struct LinearGrads {
         dW.zero();
         db.zero();
         dZ.zero();
-        dA.zero(); 
+        if (dA.ptr) dA.zero(); 
     }
 };
 

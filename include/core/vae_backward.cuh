@@ -6,7 +6,7 @@ namespace vae {
 
     namespace naive {
 
-        void backward(VAEBuffers& buf, VAEGradients& grads, float beta = 1.0f);
+        void backward(VAEBuffers& buf, VAEGradients& grads);
 
     }
     

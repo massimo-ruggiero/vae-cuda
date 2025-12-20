@@ -1,90 +1,74 @@
-#include <algorithm>
 #include <cstdio>
-#include <string>
-#include <vector>
+#include <iostream>
 
-#include "dataset.h"
-#include "trainer.cuh"
-#include "utils.cuh"
-#include "vae_buffers.cuh"
+#include "vae_config.cuh"
+#include "vae.cuh"
+#include "adam.cuh"
+#include "mnist_loader.h" 
+#include "trainer.h"      
 
-namespace {
 
-void run_checkpoint_inference(const TrainingConfig& config,
-                              const Dataset& dataset,
-                              const std::string& checkpoint_path) {
-    const int infer_batch = std::min(config.batch_size, dataset.N);
-    if (infer_batch <= 0) {
-        std::printf("No samples available for inference.\n");
-        return;
-    }
-
-    VaeConfig vae_cfg = make_vae_config(config, dataset.D, false);
-    vae_cfg.max_batch_size = config.batch_size;
-    VaeModel model(vae_cfg);
-    model.load(checkpoint_path);
-
-    DeviceTensor d_input(static_cast<size_t>(infer_batch) * dataset.D);
-    DeviceTensor d_output(static_cast<size_t>(infer_batch) * dataset.D);
-
-    CUDA_CHECK(cudaMemcpy(d_input.data(),
-                          dataset.data,
-                          d_input.bytes(),
-                          cudaMemcpyHostToDevice));
-
-    model.reconstruct(d_input.data(), d_output.data(), infer_batch);
-
-    std::vector<float> recon(static_cast<size_t>(infer_batch) * dataset.D);
-    CUDA_CHECK(cudaMemcpy(recon.data(),
-                          d_output.data(),
-                          recon.size() * sizeof(float),
-                          cudaMemcpyDeviceToHost));
-    std::printf("Checkpoint inference completed for %d samples\n", infer_batch);
+void save_binary_image(const char* filename, float* data, int size) {
+    FILE* f = fopen(filename, "wb");
+    if (!f) { printf("Errore apertura %s\n", filename); return; }
+    fwrite(data, sizeof(float), size, f);
+    fclose(f);
+    printf("[Main] Salvata immagine di test in: %s\n", filename);
 }
 
-} // namespace
 
-int main(int argc, char** argv) {
-    const std::string dataset_path = (argc > 1) ? argv[1] : "data/train.bin";
-    const std::string checkpoint_path = (argc > 2) ? argv[2] : "vae_checkpoint.bin";
-    const std::string mode = (argc > 3) ? argv[3] : "train";
+int main() {
+    VAEConfig config;
+    config.batch_size = 100;
+    config.input_dim  = 784;
+    config.hidden_dim = 400;
+    config.latent_dim = 200; 
+    config.beta       = 1.0f;
+    config.strategy   = VAEStrategy::NAIVE;
 
-    Dataset dataset = load_dataset(dataset_path.c_str());
+    float learning_rate = 1e-3f;
+    int epochs = 100;
+    const char* data_path = "data/train.bin";
 
-    TrainingConfig config;
-    config.epochs = 10;
-    config.batch_size = 128;
-    config.latent_dim = 64;
-    config.encoder_hidden_dims = {512, 256};
-    config.decoder_hidden_dims = {256, 512};
-    config.learning_rate = 1e-3f;
-    config.beta = 1.0f;
-    config.leaky_relu_alpha = 0.1f;
-    config.log_every = 50;
-    config.seed = 42ull;
-    config.checkpoint_path = checkpoint_path;
+    MNISTLoader loader(data_path);
 
-    if (mode == "train") {
-        Trainer trainer(config, dataset.D);
-        trainer.fit(dataset);
-        trainer.save_weights(checkpoint_path);
+    VAE vae(config);
 
-        const int preview_batch = std::min(config.batch_size, dataset.N);
-        if (preview_batch > 0) {
-            std::vector<float> recon(static_cast<size_t>(preview_batch) * dataset.D);
-            trainer.infer(dataset.data, preview_batch, recon.data());
-            std::printf("Preview inference completed for %d samples\n", preview_batch);
-        }
+    Adam optimizer(config, learning_rate);
 
-        run_checkpoint_inference(config, dataset, checkpoint_path);
-    } else if (mode == "infer") {
-        run_checkpoint_inference(config, dataset, checkpoint_path);
-    } else {
-        std::fprintf(stderr, "Unknown mode '%s'. Use 'train' or 'infer'.\n", mode.c_str());
-        free_dataset(dataset);
-        return 1;
-    }
+    Trainer trainer(vae, optimizer, loader, config);
+    
+    trainer.fit(epochs);
 
-    free_dataset(dataset);
+    // const char* save_path = "vae_weights.bin";
+    // vae.save_weights(save_path);
+    // printf("[Main] Pesi salvati in: %s\n", save_path);
+
+    // TEST
+
+    printf("[Test] Generazione immagine di prova...\n");
+
+    float* h_batch_in  = new float[config.batch_size * 784];
+    float* h_batch_out = new float[config.batch_size * 784];
+
+    loader.shuffle();
+    loader.next_batch(h_batch_in, config.batch_size);
+
+    vae.reconstruct(h_batch_in, h_batch_out);
+
+    FILE* f1 = fopen("original.raw", "wb");
+    fwrite(h_batch_in, sizeof(float), 784, f1); 
+    fclose(f1);
+
+    FILE* f2 = fopen("reconstructed.raw", "wb");
+    fwrite(h_batch_out, sizeof(float), 784, f2); 
+    fclose(f2);
+
+    printf("[Test] Salvati 'original.raw' e 'reconstructed.raw' (solo 1 img).\n");
+
+    // Pulizia
+    delete[] h_batch_in;
+    delete[] h_batch_out;
+
     return 0;
 }

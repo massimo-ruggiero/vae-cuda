@@ -1,5 +1,5 @@
 #include "adam.cuh"
-#include "optimizer_kernels.cuh"
+#include "optimizers.cuh"
 #include <cstdio>
 
 
@@ -54,7 +54,8 @@ void Adam::step(VAEBuffers& params, VAEGradients& grads) {
     timestep_++;
     
     apply_layer(params.enc1, grads.enc1, state_->enc1);
-    apply_layer(params.enc2, grads.enc2, state_->enc2);
+    apply_layer(params.enc2_mu, grads.enc2_mu, state_->enc2_mu);
+    apply_layer(params.enc2_logvar, grads.enc2_logvar, state_->enc2_logvar);
     apply_layer(params.dec1, grads.dec1, state_->dec1);
     apply_layer(params.dec2, grads.dec2, state_->dec2);
 }

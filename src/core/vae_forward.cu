@@ -27,12 +27,20 @@ namespace vae {
                                              batch_size * hidden_dim);
 
             linear::naive::forward(buf.enc1.A.ptr,
-                                   buf.enc2.W.ptr,
-                                   buf.enc2.b.ptr,
-                                   buf.enc2.Z.ptr,
+                                   buf.enc2_mu.W.ptr,
+                                   buf.enc2_mu.b.ptr,
+                                   buf.enc2_mu.Z.ptr, // mu
                                    batch_size,
                                    hidden_dim,
-                                   latent_dim * 2);
+                                   latent_dim);
+
+            linear::naive::forward(buf.enc1.A.ptr,
+                                   buf.enc2_logvar.W.ptr,
+                                   buf.enc2_logvar.b.ptr,
+                                   buf.enc2_logvar.Z.ptr, // logvar
+                                   batch_size,
+                                   hidden_dim,
+                                   latent_dim);
         }
 
         void decoder_pass(VAEBuffers& buf){
@@ -74,8 +82,8 @@ namespace vae {
             encoder_pass(buf);
             
             // Reparametrization trick
-            reparametrization::forward(buf.d_mu,
-                                       buf.d_logvar,
+            reparametrization::forward(buf.enc2_mu.Z.ptr,         // mu
+                                       buf.enc2_logvar.Z.ptr,     // logvar
                                        buf.d_z.ptr,
                                        buf.d_epsilon.ptr,
                                        buf.d_states,

@@ -28,6 +28,9 @@ class VAE {
         void save_weights(const char* filename);
         void load_weights(const char* filename);
 
+        VAEBuffers& get_buffers() { return buf_; }
+        VAEGradients& get_gradients() { return *grads_; }
+
 
     private:
         void initialize_weights();

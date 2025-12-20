@@ -11,11 +11,9 @@ struct VAEBuffers {
 
     GPUBuffer d_X;     
     LinearLayer enc1;       
-    LinearLayer enc2;            
+    LinearLayer enc2_mu;            
+    LinearLayer enc2_logvar;            
 
-    // NOTA: d_mu e d_logvar sono "viste" (puntatori raw) dentro enc2.Z
-    float *d_mu = nullptr;     
-    float *d_logvar = nullptr;
     GPUBuffer d_z;          
     GPUBuffer d_epsilon;
     curandStatePhilox4_32_10_t* d_states = nullptr;    
@@ -38,12 +36,10 @@ struct VAEBuffers {
 
         // ENCODER
         enc1.allocate(batch_size, input_dim, hidden_dim, true);        
-        enc2.allocate(batch_size, hidden_dim, latent_dim * 2, false); // L'output Z di questo layer contiene [mu, logvar]
+        enc2_mu.allocate(batch_size, hidden_dim, latent_dim, false); 
+        enc2_logvar.allocate(batch_size, hidden_dim, latent_dim, false); 
 
         // LATENT
-        // Z = [mu, logvar]
-        d_mu = enc2.Z.ptr; 
-        d_logvar = enc2.Z.ptr + (batch_size * latent_dim);
         d_z.allocate(batch_size * latent_dim);
         d_epsilon.allocate(batch_size * latent_dim);
         CUDA_CHECK(cudaMalloc(&d_states, batch_size * latent_dim * sizeof(curandStatePhilox4_32_10_t)));
@@ -68,10 +64,10 @@ struct VAEBuffers {
 
 struct VAEGradients {
     LinearGrads enc1;
-    LinearGrads enc2;
+    GPUBuffer enc1_dA_tmp; 
+    LinearGrads enc2_mu;
+    LinearGrads enc2_logvar;
 
-    float* d_dmu = nullptr;
-    float* d_dlogvar = nullptr;
     GPUBuffer d_dz;
 
     LinearGrads dec1;
@@ -87,11 +83,11 @@ struct VAEGradients {
 
         // ENCODER
         enc1.allocate(batch_size, input_dim, hidden_dim, true);
-        enc2.allocate(batch_size, hidden_dim, latent_dim * 2, false);
+        enc1_dA_tmp.allocate(batch_size * hidden_dim);
+        enc2_mu.allocate(batch_size, hidden_dim, latent_dim, false);
+        enc2_logvar.allocate(batch_size, hidden_dim, latent_dim, false);
 
         // LATENT
-        d_dmu = enc2.dZ.ptr;
-        d_dlogvar = enc2.dZ.ptr + (batch_size * latent_dim);
         d_dz.allocate(batch_size * latent_dim);
 
         // DECODER
@@ -103,7 +99,9 @@ struct VAEGradients {
 
     void zero_all_grads() {
         enc1.zero_grads();
-        enc2.zero_grads();
+        enc1_dA_tmp.zero();
+        enc2_mu.zero_grads();
+        enc2_logvar.zero_grads();
         dec1.zero_grads();
         dec2.zero_grads();
 
@@ -118,7 +116,8 @@ struct VAEGradients {
 
 struct VAEAdamState {
     AdamState enc1;
-    AdamState enc2;
+    AdamState enc2_mu;
+    AdamState enc2_logvar;
     AdamState dec1;
     AdamState dec2;
 
@@ -129,7 +128,8 @@ struct VAEAdamState {
         size_t latent_dim = cfg.latent_dim;
 
         enc1.allocate(input_dim, hidden_dim);
-        enc2.allocate(hidden_dim, latent_dim * 2);
+        enc2_mu.allocate(hidden_dim, latent_dim);
+        enc2_logvar.allocate(hidden_dim, latent_dim);
         
         dec1.allocate(latent_dim, hidden_dim);
         dec2.allocate(hidden_dim, input_dim);
@@ -138,7 +138,8 @@ struct VAEAdamState {
 
     void reset_all() {
         enc1.reset();
-        enc2.reset();
+        enc2_mu.reset();
+        enc2_logvar.reset();
         dec1.reset();
         dec2.reset();
     }

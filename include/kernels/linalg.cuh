@@ -13,3 +13,7 @@ namespace matmul {
                bool transpose_B = false);
 
 } // namespace matmul
+
+void add_in_place(float* d_A, 
+                  const float* d_B, 
+                  int size);

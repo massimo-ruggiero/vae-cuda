@@ -58,7 +58,7 @@ namespace activations {
                      float d_alpha) {
             const int blockSize = 256;
             const int gridSize = (size + blockSize - 1) / blockSize;
-            DEBUG("Launching leaky_relu_forward_kernel...");
+            // DEBUG("Launching leaky_relu_forward_kernel...");
             leaky_relu_forward_kernel<<<gridSize, blockSize>>>(d_Z, d_A, d_alpha, size);
 
             CUDA_CHECK(cudaGetLastError());
@@ -72,7 +72,7 @@ namespace activations {
                       float d_alpha) {
             const int blockSize = 256;
             const int gridSize = (size + blockSize - 1) / blockSize;
-            DEBUG("Launching leaky_relu_backward_kernel...");
+            // DEBUG("Launching leaky_relu_backward_kernel...");
             leaky_relu_backward_kernel<<<gridSize, blockSize>>>(d_Z, d_dA, d_dZ, d_alpha, size);
 
             CUDA_CHECK(cudaGetLastError());
@@ -88,7 +88,7 @@ namespace activations {
                     int size) {
             const int blockSize = 256;
             const int gridSize = (size + blockSize - 1) / blockSize;
-            DEBUG("Launching sigmoid_forward_kernel...");
+            // DEBUG("Launching sigmoid_forward_kernel...");
             sigmoid_forward_kernel<<<gridSize, blockSize>>>(d_Z, d_A, size);
 
             CUDA_CHECK(cudaGetLastError());
@@ -101,7 +101,7 @@ namespace activations {
                       int size) {
             const int blockSize = 256;
             const int gridSize = (size + blockSize - 1) / blockSize;
-            DEBUG("Launching sigmoid_backward_kernel...");
+            // DEBUG("Launching sigmoid_backward_kernel...");
             sigmoid_backward_kernel<<<gridSize, blockSize>>>(d_A, d_dA, d_dZ, size);
 
             CUDA_CHECK(cudaGetLastError());

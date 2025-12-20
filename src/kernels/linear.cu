@@ -45,7 +45,7 @@ namespace linear {
             dim3 blockSize(16, 16);
             dim3 gridSize((output_dim + blockSize.x - 1) / blockSize.x,
                         (batch_size + blockSize.y - 1) / blockSize.y);
-            DEBUG("Launching add_bias_kernel...");
+            // DEBUG("Launching add_bias_kernel...");
             add_bias_kernel<<<gridSize, blockSize>>>(d_Z, d_b, batch_size, output_dim);
             
             CUDA_CHECK(cudaGetLastError());
@@ -62,7 +62,7 @@ namespace linear {
                       int input_dim,
                       int output_dim) {
             // d_dX
-            id (d_dX != nullptr) {
+            if (d_dX != nullptr) {
                 matmul::naive(d_dZ, d_W, d_dX, batch_size, output_dim, input_dim, false, true);
             }
 
@@ -72,7 +72,7 @@ namespace linear {
             // d_db
             const int blockSize = 256;
             const int gridSize = (output_dim + blockSize - 1) / blockSize;
-            DEBUG("Launching db_naive_kernel...");
+            // DEBUG("Launching db_naive_kernel...");
             db_naive_kernel<<<gridSize, blockSize>>>(d_dZ, d_db, batch_size, output_dim);
             
             CUDA_CHECK(cudaGetLastError());

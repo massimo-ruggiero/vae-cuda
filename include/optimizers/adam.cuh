@@ -8,7 +8,7 @@ private:
     float lr_;
     float beta1_;
     float beta2_;
-    float eps_;
+    float epsilon_;
     int timestep_;
 
     void apply_layer(LinearLayer& l, LinearGrads& g, AdamState& s);

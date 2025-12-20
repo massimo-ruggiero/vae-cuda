@@ -33,24 +33,27 @@ __global__ void adam_step_kernel(const float* g,
     }
 }
 
-namespace adam {
+namespace optimizers {
+    namespace adam {
 
-    void step(const float* d_g,
-              float* d_theta,
-              float* d_m,
-              float* d_v,
-              int t,
-              int size,
-              float lr,
-              float beta1,
-              float beta2,
-              float epsilon) {
-        const int blockSize = 256;
-        const int gridSize = (size + blockSize - 1) / blockSize;
-        DEBUG("Launching adam_step_kernel...");
-        adam_step_kernel<<<gridSize, blockSize>>>(d_g, d_theta, d_m, d_v, t, size, lr, beta1, beta2, epsilon);
+        void step(const float* d_g,
+                float* d_theta,
+                float* d_m,
+                float* d_v,
+                int t,
+                int size,
+                float lr,
+                float beta1,
+                float beta2,
+                float epsilon) {
+            const int blockSize = 256;
+            const int gridSize = (size + blockSize - 1) / blockSize;
+            // DEBUG("Launching adam_step_kernel...");
+            adam_step_kernel<<<gridSize, blockSize>>>(d_g, d_theta, d_m, d_v, t, size, lr, beta1, beta2, epsilon);
 
-        CUDA_CHECK(cudaGetLastError());
+            CUDA_CHECK(cudaGetLastError());
+        }
+
     }
 
 }

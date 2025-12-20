@@ -62,7 +62,7 @@ namespace loss {
     namespace forward {
 
         void naive(const float* d_X,
-                   const float* d_A,
+                   const float* d_Z,
                    const float* d_mu,
                    const float* d_logvar,
                    float* d_bce,
@@ -81,10 +81,10 @@ namespace loss {
             CUDA_CHECK(cudaMemset(d_bce, 0, sizeof(float)));
             CUDA_CHECK(cudaMemset(d_kl, 0, sizeof(float)));
 
-            DEBUG("Launching bce_forward_naive_kernel...");
-            bce_forward_naive_kernel<<<gridSize_bce, blockSize>>>(d_X, d_A, d_bce, size_bce, batch_size);     
+            // DEBUG("Launching bce_forward_naive_kernel...");
+            bce_forward_naive_kernel<<<gridSize_bce, blockSize>>>(d_X, d_Z, d_bce, size_bce, batch_size);     
             
-            DEBUG("Launching kl_forward_naive_kernel...");
+            // DEBUG("Launching kl_forward_naive_kernel...");
             kl_forward_naive_kernel<<<gridSize_kl, blockSize>>>(d_mu, d_logvar, d_kl, size_kl, batch_size);   
 
             CUDA_CHECK(cudaDeviceSynchronize()); 
@@ -120,7 +120,7 @@ namespace loss {
                 float* d_dmu,
                 float* d_dlogvar,
                 int size,
-                float beta = 1.0f) {
+                float beta) {
             const int blockSize = 256;
             const int gridSize = (size + blockSize - 1) / blockSize;
             DEBUG("Launching kl_backward_kernel...");

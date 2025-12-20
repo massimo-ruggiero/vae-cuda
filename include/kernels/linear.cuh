@@ -25,8 +25,4 @@ namespace linear {
                      
     } // namespace naive
 
-    namespace fused {
-
-    } // namespace fused
-
 } // namespace linear

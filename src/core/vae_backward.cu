@@ -1,5 +1,6 @@
 #include "vae_backward.cuh"
 #include "linear.cuh"
+#include "linalg.cuh"
 #include "activations.cuh"
 #include "reparametrization.cuh"
 #include "loss.cuh"
@@ -9,7 +10,7 @@ namespace vae {
 
     namespace naive {
 
-        void backward(VAEBuffers& buf, VAEGradients& grads, float beta = 1.0f){
+        void backward(VAEBuffers& buf, VAEGradients& grads){
             int batch_size = buf.config.batch_size;
             int input_dim = buf.config.input_dim;
             int hidden_dim = buf.config.hidden_dim;
@@ -40,7 +41,7 @@ namespace vae {
             linear::naive::backward(buf.d_z.ptr,
                                     buf.dec1.W.ptr,
                                     grads.dec1.dZ.ptr,
-                                    grads.dec1.dA.ptr,
+                                    grads.d_dz.ptr,
                                     grads.dec1.dW.ptr,
                                     grads.dec1.db.ptr,
                                     batch_size,
@@ -49,29 +50,41 @@ namespace vae {
 
             // reparametrization trick
             reparametrization::backward(grads.d_dz.ptr,
-                                        buf.d_logvar,
+                                        buf.enc2_logvar.Z.ptr,      // logvar
                                         buf.d_epsilon.ptr,
-                                        grads.d_dmu,
-                                        grads.d_dlogvar,
+                                        grads.enc2_mu.dZ.ptr,       // dmu
+                                        grads.enc2_logvar.dZ.ptr,   // dlogvar
                                         batch_size * latent_dim);
             
-            loss::backward::kl(buf.d_mu,
-                            buf.d_logvar,
-                            grads.d_dmu,
-                            grads.d_dlogvar,
+            loss::backward::kl(buf.enc2_mu.Z.ptr,       // mu
+                            buf.enc2_logvar.Z.ptr,      // logvar
+                            grads.enc2_mu.dZ.ptr,       // dmu
+                            grads.enc2_logvar.dZ.ptr,   // dlogvar
                             batch_size * latent_dim,
-                            beta);
+                            buf.config.beta);
 
             // encoder
             linear::naive::backward(buf.enc1.A.ptr,
-                                    buf.enc2.W.ptr,
-                                    grads.enc2.dZ.ptr,
+                                    buf.enc2_mu.W.ptr,
+                                    grads.enc2_mu.dZ.ptr,   // dmu
                                     grads.enc1.dA.ptr,
-                                    grads.enc2.dW.ptr,
-                                    grads.enc2.db.ptr,
+                                    grads.enc2_mu.dW.ptr,
+                                    grads.enc2_mu.db.ptr,
                                     batch_size,
                                     hidden_dim,
-                                    latent_dim * 2);
+                                    latent_dim);
+
+            linear::naive::backward(buf.enc1.A.ptr,
+                                    buf.enc2_logvar.W.ptr,  
+                                    grads.enc2_logvar.dZ.ptr,   // dlogvar
+                                    grads.enc1_dA_tmp.ptr,      
+                                    grads.enc2_logvar.dW.ptr,
+                                    grads.enc2_logvar.db.ptr,
+                                    batch_size,
+                                    hidden_dim,
+                                    latent_dim);
+            
+            add_in_place(grads.enc1.dA.ptr, grads.enc1_dA_tmp.ptr, batch_size * hidden_dim);
 
             activations::leaky_relu::backward(buf.enc1.Z.ptr,
                                             grads.enc1.dA.ptr,
@@ -90,6 +103,6 @@ namespace vae {
 
         }
 
-    }
+    } // namespace naive
 
-}
+} // namespace vae
