@@ -7,10 +7,10 @@ enum class VAEStrategy {
 };
 
 struct VAEConfig {
-    int batch_size = 64;
-    int input_dim = 784;
-    int hidden_dim = 400;
-    int latent_dim = 20;
-    VAEStrategy strategy = VAEStrategy::NAIVE;
+    size_t batch_size = 100;
+    size_t input_dim = 784;
+    size_t hidden_dim = 400;
+    size_t latent_dim = 200;
     float beta = 1.0f;
+    VAEStrategy strategy = VAEStrategy::NAIVE;
 };

@@ -5,7 +5,7 @@
 #include "vae.cuh"
 #include "adam.cuh"
 #include "mnist_loader.h" 
-#include "trainer.h"      
+#include "trainer.cuh"      
 
 
 void save_binary_image(const char* filename, float* data, int size) {
@@ -18,13 +18,14 @@ void save_binary_image(const char* filename, float* data, int size) {
 
 
 int main() {
-    VAEConfig config;
-    config.batch_size = 100;
-    config.input_dim  = 784;
-    config.hidden_dim = 400;
-    config.latent_dim = 200; 
-    config.beta       = 1.0f;
-    config.strategy   = VAEStrategy::NAIVE;
+    VAEConfig config = {
+        .batch_size = 100,
+        .input_dim  = 784,
+        .hidden_dim = 400,
+        .latent_dim = 200,
+        .beta       = 1.0f,
+        .strategy   = VAEStrategy::NAIVE
+    };
 
     float learning_rate = 1e-3f;
     int epochs = 100;

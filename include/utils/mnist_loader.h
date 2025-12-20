@@ -19,8 +19,12 @@ private:
 
 public:
     MNISTLoader(const char* filename) 
-        : images_(nullptr), labels_(nullptr), indices_(nullptr), 
-          num_samples_(0), feature_dim_(784), current_idx_(0) 
+        : images_(nullptr), 
+          labels_(nullptr), 
+          indices_(nullptr), 
+          num_samples_(0), 
+          feature_dim_(784), 
+          current_idx_(0) 
     {
         FILE* f = fopen(filename, "rb");
         if (!f) {

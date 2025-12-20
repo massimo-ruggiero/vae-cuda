@@ -19,10 +19,14 @@ static void init_uniform(LinearLayer& layer, float limit) {
     std::mt19937 gen(rd());
     std::uniform_real_distribution<float> dis(-limit, limit);
 
-    for(auto& w : h_W) w = dis(gen);
+    for(float& w : h_W) w = dis(gen);
 
-    cudaMemcpy(layer.W.ptr, h_W.data(), h_W.size() * sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(layer.b.ptr, h_b.data(), h_b.size() * sizeof(float), cudaMemcpyHostToDevice);
+    CUDA_CHECK(cudaMemcpy(layer.W.ptr, h_W.data(), 
+                          h_W.size() * sizeof(float), 
+                          cudaMemcpyHostToDevice));
+    CUDA_CHECK(cudaMemcpy(layer.b.ptr, h_b.data(), 
+                          h_b.size() * sizeof(float), 
+                          cudaMemcpyHostToDevice));
 }
 
 static void init_xavier(LinearLayer& layer) {
@@ -91,7 +95,9 @@ float VAE::train_step(const float* h_batch){
     ensure_training_resources();
 
     size_t data_size = buf_.config.batch_size * buf_.config.input_dim * sizeof(float);
-    CUDA_CHECK(cudaMemcpy(buf_.d_X.ptr, h_batch, data_size, cudaMemcpyHostToDevice));
+    CUDA_CHECK(cudaMemcpy(buf_.d_X.ptr, h_batch, 
+                          data_size, 
+                          cudaMemcpyHostToDevice));
 
     grads_->zero_all_grads();
 
@@ -121,8 +127,12 @@ float VAE::train_step(const float* h_batch){
     }
 
     float h_bce = 0.0f, h_kl = 0.0f;
-    CUDA_CHECK(cudaMemcpy(&h_bce, d_bce_loss_, sizeof(float), cudaMemcpyDeviceToHost));
-    CUDA_CHECK(cudaMemcpy(&h_kl, d_kl_loss_, sizeof(float), cudaMemcpyDeviceToHost));
+    CUDA_CHECK(cudaMemcpy(&h_bce, d_bce_loss_, 
+                          sizeof(float), 
+                          cudaMemcpyDeviceToHost));
+    CUDA_CHECK(cudaMemcpy(&h_kl, d_kl_loss_, 
+                          sizeof(float), 
+                          cudaMemcpyDeviceToHost));
 
     DEBUG("[LOSS] total=%f bce=%f kl=%f beta=%f", h_loss, h_bce, h_kl, buf_.config.beta);
 
