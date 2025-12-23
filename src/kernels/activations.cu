@@ -137,6 +137,8 @@ __global__ void sigmoid_backward_vectorized_kernel(const float* A,
         *reinterpret_cast<float4*>(&dZ[idx]) = dZ_vec;
 
     } else if (idx < size) {
+        // Ref: https://stackoverflow.com/questions/22278631/what-does-pragma-unroll-do-exactly-does-it-affect-the-number-of-threads
+        #pragma unroll
         for (int i = idx; i < size; ++i) {
             float a = A[i];
             dZ[i] = dA[i] * a * (1.0f - a);

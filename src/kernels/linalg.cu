@@ -171,7 +171,24 @@ __global__ void add_inplace_naive_kernel(float* A,
 
 __global__ void add_inplace_vectorized_kernel(float* A, 
                                               const float* B, 
-                                              int size) {}
+                                              int size) {
+    int idx = (blockIdx.x * blockDim.x + threadIdx.x) * 4; 
+    if (idx + 3 < size) {
+        float4 A_vec = *reinterpret_cast<float4*>(&A[idx]);
+        float4 B_vec = *reinterpret_cast<const float4*>(&B[idx]);
+
+        A_vec.x += B_vec.x;
+        A_vec.y += B_vec.y;
+        A_vec.z += B_vec.z;
+        A_vec.w += B_vec.w;
+
+        *reinterpret_cast<float4*>(&A[idx]) = A_vec;
+    } else if (idx < size) {
+        for (int i = idx; i < size; ++i) {
+            A[i] += B[i];
+        }
+    }
+}
 
 
 namespace linalg {
@@ -217,17 +234,20 @@ namespace linalg {
                       int size,
                       const VAEStrategy& strategy) {
         const int blockSize = 256;
-        const int gridSize  = (size + blockSize - 1) / blockSize;
+        int gridSize;
         switch(strategy) {
             case VAEStrategy::NAIVE:
+                gridSize  = (size + blockSize - 1) / blockSize;
                 DEBUG("Launching add_inplace_naive_kernel...");
                 add_inplace_naive_kernel<<<gridSize, blockSize>>>(d_A, d_B, size);
                 break;
             case VAEStrategy::VECTORIZED:
+                gridSize  = ((size + 3) / 4 + blockSize - 1) / blockSize;
                 DEBUG("Launching add_inplace_vectorized_kernel...");
                 add_inplace_vectorized_kernel<<<gridSize, blockSize>>>(d_A, d_B, size);
                 break;
             default:
+                gridSize  = (size + blockSize - 1) / blockSize;
                 DEBUG("Launching add_inplace_naive_kernel...");
                 add_inplace_naive_kernel<<<gridSize, blockSize>>>(d_A, d_B, size);
                 break;

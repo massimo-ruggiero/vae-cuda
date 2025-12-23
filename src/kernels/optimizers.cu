@@ -4,16 +4,16 @@
 #include <math.h>
 
 
-__global__ void adam_step_kernel(const float* g,
-                                 float* theta,
-                                 float* m,
-                                 float* v,
-                                 int t,
-                                 int size,
-                                 float lr,
-                                 float beta1,
-                                 float beta2,
-                                 float epsilon) {
+__global__ void adam_step_naive_kernel(const float* g,
+                                       float* theta,
+                                       float* m,
+                                       float* v,
+                                       int t,
+                                       int size,
+                                       float lr,
+                                       float beta1,
+                                       float beta2,
+                                       float epsilon) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx < size) {
         float g_val = g[idx];
@@ -33,6 +33,19 @@ __global__ void adam_step_kernel(const float* g,
     }
 }
 
+__global__ void adam_step_vectorized_kernel(const float* g,
+                                            float* theta,
+                                            float* m,
+                                            float* v,
+                                            int t,
+                                            int size,
+                                            float lr,
+                                            float beta1,
+                                            float beta2,
+                                            float epsilon) {
+    // TODO                                            
+}
+
 namespace optimizers {
 
     namespace adam {
@@ -49,15 +62,22 @@ namespace optimizers {
                 float epsilon,
                 const VAEStrategy& strategy) {
             const int blockSize = 256;
-            const int gridSize = (size + blockSize - 1) / blockSize;
+            int gridSize;
 
             switch(strategy) {
                 case VAEStrategy::NAIVE:
-                    DEBUG("Launching adam_step_kernel...");
-                    adam_step_kernel<<<gridSize, blockSize>>>(d_g, d_theta, d_m, d_v, t, size, lr, beta1, beta2, epsilon);
+                    gridSize = (size + blockSize - 1) / blockSize;
+                    DEBUG("Launching adam_step_naive_kernel...");
+                    adam_step_naive:kernel<<<gridSize, blockSize>>>(d_g, d_theta, d_m, d_v, t, size, lr, beta1, beta2, epsilon);
+                    break;
+                case VAEStrategy::VECTORIZED:
+                    gridSize = ((size + 3) / 4 + blockSize - 1) / blockSize;
+                    DEBUG("Launching adam_step_vectorized_kernel...");
+                    adam_step_naive:kernel<<<gridSize, blockSize>>>(d_g, d_theta, d_m, d_v, t, size, lr, beta1, beta2, epsilon);
                     break;
                 default:
-                    DEBUG("Launching adam_step_kernel...");
+                    gridSize = (size + blockSize - 1) / blockSize;
+                    DEBUG("Launching adam_step_naive_kernel...");
                     adam_step_kernel<<<gridSize, blockSize>>>(d_g, d_theta, d_m, d_v, t, size, lr, beta1, beta2, epsilon);
                     break;
             }

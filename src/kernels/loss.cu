@@ -3,6 +3,7 @@
 #include <cuda_runtime.h>
 #include <math.h>
 
+// bce forward
 __global__ void bce_forward_naive_kernel(const float* X,
                                          const float* Z,
                                          float* bce_sum,
@@ -18,6 +19,7 @@ __global__ void bce_forward_naive_kernel(const float* X,
     }
 }
 
+// kl forward
 __global__ void kl_forward_naive_kernel(const float* mu,
                                         const float* logvar,
                                         float* kl_sum,
@@ -33,7 +35,7 @@ __global__ void kl_forward_naive_kernel(const float* mu,
     }
 }
 
-// bce_backward
+// bce backward
 
 __global__ void bce_backward_naive_kernel(const float* X,
                                           const float* X_hat,
@@ -48,9 +50,27 @@ __global__ void bce_backward_naive_kernel(const float* X,
 __global__ void bce_backward_vectorized_kernel(const float* X,
                                                const float* X_hat,
                                                float* dA,
-                                               int size) {}
+                                               int size) {
+    int idx = (blockIdx.x * blockDim.x + threadIdx.x) * 4;
+    if (idx + 3 < size) {
+        float4 X_vec = *reinterpret_cast<const float4*>(&X[idx]);
+        float4 X_hat_vec = *reinterpret_cast<const float4*>(&X_hat[idx]);
+        float4 dA_vec;
 
-// kl_backward
+        dA_vec.x = X_hat_vec.x - X_vec.x;
+        dA_vec.y = X_hat_vec.y - X_vec.y;
+        dA_vec.z = X_hat_vec.z - X_vec.z;
+        dA_vec.w = X_hat_vec.w - X_vec.w;
+
+        *reinterpret_cast<float4*>(&dA[idx]) = dA_vec;
+    } else if (idx < size) {
+        for (int i = idx; i < size; ++i) {
+            dA[i] = X_hat[i] - X[i];
+        }
+    }
+}
+
+// kl backward
 __global__ void kl_backward_naive_kernel(const float* mu,
                                          const float* logvar,
                                          float* dmu,
@@ -69,7 +89,34 @@ __global__ void kl_backward_vectorized_kernel(const float* mu,
                                               float* dmu,
                                               float* dlogvar,
                                               int size,
-                                              float beta) {}
+                                              float beta) {
+    int idx = (blockIdx.x * blockDim.x + threadIdx.x) * 4;
+    if (idx + 3 < size) {
+        float4 mu_vec = *reinterpret_cast<const float4*>(&mu[idx]);
+        float4 logvar_vec = *reinterpret_cast<const float4*>(&logvar[idx]);
+        float4 dmu_vec = *reinterpret_cast<const float4*>(&dmu[idx]);
+        float4 dlogvar_vec = *reinterpret_cast<const float4*>(&dlogvar[idx]);
+
+        dmu_vec.x += beta * mu_vec.x;
+        dmu_vec.y += beta * mu_vec.y;
+        dmu_vec.z += beta * mu_vec.z;
+        dmu_vec.w += beta * mu_vec.w;
+
+        dlogvar_vec.x += beta * 0.5f * (expf(logvar_vec.x) - 1.0f);
+        dlogvar_vec.y += beta * 0.5f * (expf(logvar_vec.y) - 1.0f);
+        dlogvar_vec.z += beta * 0.5f * (expf(logvar_vec.z) - 1.0f);
+        dlogvar_vec.w += beta * 0.5f * (expf(logvar_vec.w) - 1.0f);
+
+        *reinterpret_cast<float4*>(&dmu[idx]) = dmu_vec;
+        *reinterpret_cast<float4*>(&dlogvar[idx]) = dlogvar_vec;
+    } 
+    else if (idx < size) {
+        for (int i = idx; i < size; ++i) {
+            dmu[i] += beta * mu[i];
+            dlogvar[i] += beta * 0.5f * (expf(logvar[i]) - 1.0f);
+        }
+    }
+}
 
 namespace loss {
 
@@ -120,18 +167,21 @@ namespace loss {
                  int size,
                  const VAEStrategy& strategy) {
             const int blockSize = 256;
-            const int gridSize = (size + blockSize - 1) / blockSize;
+            int gridSize;
 
             switch(strategy) {
                 case VAEStrategy::NAIVE: 
+                    gridSize = (size + blockSize - 1) / blockSize;
                     DEBUG("Launching bce_backward_naive_kernel...");
                     bce_backward_naive_kernel<<<gridSize, blockSize>>>(d_X, d_X_hat, d_dA, size);
                     break;   
                 case VAEStrategy::VECTORIZED: 
+                    gridSize = ((size + 3) / 4 + blockSize - 1) / blockSize;
                     DEBUG("Launching bce_backward_vectorized_kernel...");
                     bce_backward_vectorized_kernel<<<gridSize, blockSize>>>(d_X, d_X_hat, d_dA, size);
                     break;
                 default:  
+                    gridSize = (size + blockSize - 1) / blockSize;
                     DEBUG("Launching bce_backward_naive_kernel...");
                     bce_backward_naive_kernel<<<gridSize, blockSize>>>(d_X, d_X_hat, d_dA, size);
                     break;      
@@ -148,18 +198,21 @@ namespace loss {
                 float beta,
                 const VAEStrategy& strategy) {
             const int blockSize = 256;
-            const int gridSize = (size + blockSize - 1) / blockSize;
+            int gridSize;
 
             switch(strategy) {
                 case VAEStrategy::NAIVE: 
+                    gridSize = (size + blockSize - 1) / blockSize;
                     DEBUG("Launching kl_backward_naive_kernel...");
                     kl_backward_naive_kernel<<<gridSize, blockSize>>>(d_mu, d_logvar, d_dmu, d_dlogvar, size, beta); 
                     break;   
                 case VAEStrategy::VECTORIZED: 
+                    gridSize = ((size + 3) / 4 + blockSize - 1) / blockSize;
                     DEBUG("Launching kl_backward_vectorized_kernel...");
                     kl_backward_vectorized_kernel<<<gridSize, blockSize>>>(d_X, d_X_hat, d_dA, size);
                     break;
                 default:  
+                    gridSize = (size + blockSize - 1) / blockSize;
                     DEBUG("Launching kl_backward_naive_kernel...");
                     kl_backward_naive_kernel<<<gridSize, blockSize>>>(d_mu, d_logvar, d_dmu, d_dlogvar, size, beta); 
                     break;        
