@@ -164,7 +164,9 @@ void VAE::decode(const float* h_z, float* h_output) {
                           cudaMemcpyHostToDevice));
 
     switch (buf_.config.strategy) {
-        case VAEStrategy::NAIVE: vae::naive::decoder_pass(buf_); break;
+        case VAEStrategy::NAIVE: 
+            vae::naive::decoder_pass(buf_); 
+            break;
     }
 
     CUDA_CHECK(cudaMemcpy(h_output, buf_.d_X_hat.ptr, 

@@ -3,7 +3,12 @@
 
 
 enum class VAEStrategy {
-    NAIVE
+    NAIVE,
+    TILING,
+    PADDING,
+    VECTORIZED,
+    REDUCTION,
+    KERNEL_FUSION,
 };
 
 struct VAEConfig {

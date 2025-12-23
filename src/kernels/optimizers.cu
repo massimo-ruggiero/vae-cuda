@@ -34,6 +34,7 @@ __global__ void adam_step_kernel(const float* g,
 }
 
 namespace optimizers {
+
     namespace adam {
 
         void step(const float* d_g,
@@ -45,15 +46,25 @@ namespace optimizers {
                 float lr,
                 float beta1,
                 float beta2,
-                float epsilon) {
+                float epsilon,
+                const VAEStrategy& strategy) {
             const int blockSize = 256;
             const int gridSize = (size + blockSize - 1) / blockSize;
-            // DEBUG("Launching adam_step_kernel...");
-            adam_step_kernel<<<gridSize, blockSize>>>(d_g, d_theta, d_m, d_v, t, size, lr, beta1, beta2, epsilon);
+
+            switch(strategy) {
+                case VAEStrategy::NAIVE:
+                    DEBUG("Launching adam_step_kernel...");
+                    adam_step_kernel<<<gridSize, blockSize>>>(d_g, d_theta, d_m, d_v, t, size, lr, beta1, beta2, epsilon);
+                    break;
+                default:
+                    DEBUG("Launching adam_step_kernel...");
+                    adam_step_kernel<<<gridSize, blockSize>>>(d_g, d_theta, d_m, d_v, t, size, lr, beta1, beta2, epsilon);
+                    break;
+            }
 
             CUDA_CHECK(cudaGetLastError());
         }
 
-    }
+    } // namespace adam 
 
-}
+} // namespace optimizers 

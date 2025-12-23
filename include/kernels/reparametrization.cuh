@@ -1,5 +1,5 @@
 #pragma once
-#include <cuda_runtime.h>
+#include "vae_config.cuh"
 #include <curand_kernel.h>
 
 
@@ -14,13 +14,15 @@ namespace reparametrization {
                  float* z,
                  float* d_epsilon,
                  curandStatePhilox4_32_10_t* d_states,
-                 int size);
+                 int size,
+                 const VAEStrategy& strategy = VAEStrategy::NAIVE);
 
     void backward(const float* d_dz,
                   const float* d_logvar,
                   const float* d_epsilon,
                   float* d_dmu,
                   float* d_dlogvar,
-                  int size);
+                  int size,
+                  const VAEStrategy& strategy = VAEStrategy::NAIVE);
 
 }

@@ -92,7 +92,6 @@ namespace activations {
             sigmoid_forward_kernel<<<gridSize, blockSize>>>(d_Z, d_A, size);
 
             CUDA_CHECK(cudaGetLastError());
-            CUDA_CHECK(cudaDeviceSynchronize());
         }
 
         void backward(const float* d_A,
@@ -105,7 +104,6 @@ namespace activations {
             sigmoid_backward_kernel<<<gridSize, blockSize>>>(d_A, d_dA, d_dZ, size);
 
             CUDA_CHECK(cudaGetLastError());
-            CUDA_CHECK(cudaDeviceSynchronize());
         }
 
     } // namespace sigmoid

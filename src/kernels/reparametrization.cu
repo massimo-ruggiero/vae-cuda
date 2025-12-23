@@ -65,7 +65,8 @@ namespace reparametrization {
                     float* d_z,
                     float* d_epsilon,
                     curandStatePhilox4_32_10_t* d_states,
-                    int size) {
+                    int size,
+                    const VAEStrategy& strategy) {
 
         const int blockSize = 256;
         const int gridSize = (size + blockSize - 1) / blockSize;
@@ -80,7 +81,8 @@ namespace reparametrization {
                   const float* d_epsilon,
                   float* d_dmu,
                   float* d_dlogvar,
-                  int size) {
+                  int size,
+                  const VAEStrategy& strategy) {
         const int blockSize = 256;
         const int gridSize = (size + blockSize - 1) / blockSize;
         DEBUG("Launching reparametrization_backward_kernel...");
