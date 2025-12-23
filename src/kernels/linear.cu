@@ -31,7 +31,7 @@ __global__ void add_bias_vectorized_kernel(float* Z,
         Z_vec.z += b_vec.z;
         Z_vec.w += b_vec.w;
 
-        reinterpret_cast<float4*>(&Z[idx])[0] = Z_vec;
+        *reinterpret_cast<float4*>(&Z[idx]) = Z_vec;
     } else if (row < batch_size && col < output_dim) {
         for (int c = col; c < output_dim; ++c) {
             Z[row * output_dim + c] += b[c];
@@ -71,24 +71,23 @@ namespace linear {
         linalg::sgemm(d_X, d_W, d_Z, batch_size, input_dim, output_dim, strategy);
 
         dim3 blockSize(16, 16);
-
         switch(strategy) {
             case VAEStrategy::NAIVE:
                 DEBUG("Launching add_bias_naive_kernel...");
                 dim3 gridSize((output_dim + blockSize.x - 1) / blockSize.x,
-                      (batch_size + blockSize.y - 1) / blockSize.y);
+                              (batch_size + blockSize.y - 1) / blockSize.y);
                 add_bias_naive_kernel<<<gridSize, blockSize>>>(d_Z, d_b, batch_size, output_dim);
                 break;
             case VAEStrategy::VECTORIZED:
                 DEBUG("Launching add_bias_vectorized_kernel...");
                 dim3 gridSize(((output_dim + 3) / 4 + blockSize.x - 1) / blockSize.x,
-                      (batch_size + blockSize.y - 1) / blockSize.y);
+                              (batch_size + blockSize.y - 1) / blockSize.y);
                 add_bias_vectorized_kernel<<<gridSize, blockSize>>>(d_Z, d_b, batch_size, output_dim);
                 break;
             default:
                 DEBUG("Launching add_bias_naive_kernel...");
                 dim3 gridSize((output_dim + blockSize.x - 1) / blockSize.x,
-                      (batch_size + blockSize.y - 1) / blockSize.y);
+                              (batch_size + blockSize.y - 1) / blockSize.y);
                 add_bias_naive_kernel<<<gridSize, blockSize>>>(d_Z, d_b, batch_size, output_dim);
                 break; 
         }
