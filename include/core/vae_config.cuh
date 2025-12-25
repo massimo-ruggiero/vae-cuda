@@ -6,9 +6,13 @@ enum class VAEStrategy {
     NAIVE,
     TILING,
     PADDING,
-    VECTORIZED,
     REDUCTION,
+    UNROLLED_REDUCTION,
+    WARP_REDUCTION,
+    VECTORIZED,
     KERNEL_FUSION,
+    TENSORE_CORES,
+    CUBLAS,
 };
 
 struct VAEConfig {

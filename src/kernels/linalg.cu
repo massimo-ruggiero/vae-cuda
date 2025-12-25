@@ -3,9 +3,13 @@
 #include <cuda_runtime.h>
 
 
-const int TILE_DIM = 16;
+static constexpr int TILE_DIM = 16;
 
-// sgemm
+
+// ==============================
+// Kernels: SGEMM
+// ==============================
+
 __global__ void sgemm_naive_kernel(const float* A,
                                     const float* B,
                                     float* C,
@@ -159,7 +163,11 @@ __global__ void sgemm_padding_kernel(const float* A,
     C[row * C_cols + col] = sum;
 }
 
-// add_in_place
+
+// ==============================
+// Kernels: Add inplace
+// ==============================
+
 __global__ void add_inplace_naive_kernel(float* A, 
                                    const float* B, 
                                    int size) {
@@ -169,7 +177,7 @@ __global__ void add_inplace_naive_kernel(float* A,
     }
 }
 
-__global__ void add_inplace_vectorized_kernel(float* A, 
+__global__ void add_inplace_vec4_kernel(float* A, 
                                               const float* B, 
                                               int size) {
     int idx = (blockIdx.x * blockDim.x + threadIdx.x) * 4; 
@@ -190,6 +198,10 @@ __global__ void add_inplace_vectorized_kernel(float* A,
     }
 }
 
+
+// ==============================
+// Host API
+// ==============================
 
 namespace linalg {
 
@@ -243,8 +255,8 @@ namespace linalg {
                 break;
             case VAEStrategy::VECTORIZED:
                 gridSize  = ((size + 3) / 4 + blockSize - 1) / blockSize;
-                DEBUG("Launching add_inplace_vectorized_kernel...");
-                add_inplace_vectorized_kernel<<<gridSize, blockSize>>>(d_A, d_B, size);
+                DEBUG("Launching add_inplace_vec4_kernel...");
+                add_inplace_vec4_kernel<<<gridSize, blockSize>>>(d_A, d_B, size);
                 break;
             default:
                 gridSize  = (size + blockSize - 1) / blockSize;

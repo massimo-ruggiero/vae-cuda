@@ -3,7 +3,11 @@
 #include <cuda_runtime.h>
 #include <math.h>
 
-// leaky_relu
+
+// ==============================
+// Forward kernels: LeakyReLU
+// ==============================
+
 __global__ void leaky_relu_forward_naive_kernel(const float* Z,
                                                 float* A,
                                                 float alpha,
@@ -15,7 +19,7 @@ __global__ void leaky_relu_forward_naive_kernel(const float* Z,
     }
 }
 
-__global__ void leaky_relu_forward_vectorized_kernel(const float* Z,
+__global__ void leaky_relu_forward_vec4_kernel(const float* Z,
                                                      float* A,
                                                      float alpha,
                                                      int size) {
@@ -38,6 +42,46 @@ __global__ void leaky_relu_forward_vectorized_kernel(const float* Z,
     }
 }
 
+
+// ==============================
+// Forward kernels: Sigmoid
+// ==============================
+
+__global__ void sigmoid_forward_naive_kernel(const float* Z,
+                                             float* A,
+                                             int size) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx < size) { 
+        A[idx] = 1.0f / (1.0f + expf(-Z[idx])); // TODO: ottimizzare con __expf (SFU) - Micro-Optimization
+    }
+}
+
+__global__ void sigmoid_forward_vec4_kernel(const float* Z,
+                                                  float* A,
+                                                  int size) {
+    int idx = (blockIdx.x * blockDim.x + threadIdx.x) * 4;
+    if (idx + 3 < size) { 
+        float4 Z_vec = *reinterpret_cast<const float4*>(&Z[idx]);
+        float4 A_vec;
+
+        A_vec.x = 1.0f / (1.0f + expf(-Z_vec.x));
+        A_vec.y = 1.0f / (1.0f + expf(-Z_vec.y));
+        A_vec.z = 1.0f / (1.0f + expf(-Z_vec.z));
+        A_vec.w = 1.0f / (1.0f + expf(-Z_vec.w));
+    
+        *reinterpret_cast<float4*>(&A[idx]) = A_vec;
+    } else if (idx < size) {
+        for (int i = idx; i < size; ++i) {
+            A[i] = 1.0f / (1.0f + expf(-Z[i])); // TODO: __frcp_rn(x) (SFU) - Micro-Optimization
+        }
+    }
+}
+
+
+// ==============================
+// Backward kernels: LeakyReLU
+// ==============================
+
 __global__ void leaky_relu_backward_naive_kernel(const float* Z,
                                                  const float* dA,
                                                  float* dZ,
@@ -51,7 +95,7 @@ __global__ void leaky_relu_backward_naive_kernel(const float* Z,
     }
 }
 
-__global__ void leaky_relu_backward_vectorized_kernel(const float* Z,
+__global__ void leaky_relu_backward_vec4_kernel(const float* Z,
                                                  const float* dA,
                                                  float* dZ,
                                                  float alpha,
@@ -77,36 +121,10 @@ __global__ void leaky_relu_backward_vectorized_kernel(const float* Z,
     }
 }
 
-// sigmoid
-__global__ void sigmoid_forward_naive_kernel(const float* Z,
-                                             float* A,
-                                             int size) {
-    int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx < size) { 
-        A[idx] = 1.0f / (1.0f + expf(-Z[idx])); // TODO: ottimizzare con __expf (SFU) - Micro-Optimization
-    }
-}
 
-__global__ void sigmoid_forward_vectorized_kernel(const float* Z,
-                                                  float* A,
-                                                  int size) {
-    int idx = (blockIdx.x * blockDim.x + threadIdx.x) * 4;
-    if (idx + 3 < size) { 
-        float4 Z_vec = *reinterpret_cast<const float4*>(&Z[idx]);
-        float4 A_vec;
-
-        A_vec.x = 1.0f / (1.0f + expf(-Z_vec.x));
-        A_vec.y = 1.0f / (1.0f + expf(-Z_vec.y));
-        A_vec.z = 1.0f / (1.0f + expf(-Z_vec.z));
-        A_vec.w = 1.0f / (1.0f + expf(-Z_vec.w));
-    
-        *reinterpret_cast<float4*>(&A[idx]) = A_vec;
-    } else if (idx < size) {
-        for (int i = idx; i < size; ++i) {
-            A[i] = 1.0f / (1.0f + expf(-Z[i])); // TODO: __frcp_rn(x) (SFU) - Micro-Optimization
-        }
-    }
-}
+// ==============================
+// Backward kernels: Sigmoid
+// ==============================
 
 __global__ void sigmoid_backward_naive_kernel(const float* A,
                                               const float* dA,
@@ -119,7 +137,7 @@ __global__ void sigmoid_backward_naive_kernel(const float* A,
     }
 }
 
-__global__ void sigmoid_backward_vectorized_kernel(const float* A,
+__global__ void sigmoid_backward_vec4_kernel(const float* A,
                                                    const float* dA,
                                                    float* dZ,
                                                    int size) {
@@ -137,14 +155,17 @@ __global__ void sigmoid_backward_vectorized_kernel(const float* A,
         *reinterpret_cast<float4*>(&dZ[idx]) = dZ_vec;
 
     } else if (idx < size) {
-        // Ref: https://stackoverflow.com/questions/22278631/what-does-pragma-unroll-do-exactly-does-it-affect-the-number-of-threads
-        #pragma unroll
         for (int i = idx; i < size; ++i) {
             float a = A[i];
             dZ[i] = dA[i] * a * (1.0f - a);
         }
     }
 }
+
+
+// ==============================
+// Host API
+// ==============================
 
 namespace activations {
 
@@ -165,7 +186,7 @@ namespace activations {
                 case VAEStrategy::VECTORIZED:
                     DEBUG("Launching leaky_relu_forward_kernel...");
                     const int gridSize = ((size + 3) / 4 + blockSize - 1) / blockSize;
-                    leaky_relu_forward_vectorized_kernel<<<gridSize, blockSize>>>(d_Z, d_A, d_alpha, size);
+                    leaky_relu_forward_vec4_kernel<<<gridSize, blockSize>>>(d_Z, d_A, d_alpha, size);
                     break;
                 default:
                     DEBUG("Launching leaky_relu_forward_naive_kernel...");
@@ -173,7 +194,6 @@ namespace activations {
                     leaky_relu_forward_naive_kernel<<<gridSize, blockSize>>>(d_Z, d_A, d_alpha, size);
                     break;
             }
-            
 
             CUDA_CHECK(cudaGetLastError());
         }
@@ -193,9 +213,9 @@ namespace activations {
                     leaky_relu_backward_naive_kernel<<<gridSize, blockSize>>>(d_Z, d_dA, d_dZ, d_alpha, size);
                     break;
                 case VAEStrategy::VECTORIZED:
-                    DEBUG("Launching leaky_relu_backward_vectorized_kernel...");
+                    DEBUG("Launching leaky_relu_backward_vec4_kernel...");
                     gridSize = ((size + 3) / 4 + blockSize - 1) / blockSize;
-                    leaky_relu_backward_vectorized_kernel<<<gridSize, blockSize>>>(d_Z, d_dA, d_dZ, d_alpha, size);
+                    leaky_relu_backward_vec4_kernel<<<gridSize, blockSize>>>(d_Z, d_dA, d_dZ, d_alpha, size);
                     break;
                 default:
                     DEBUG("Launching leaky_relu_forward_naive_kernel...");
@@ -224,9 +244,9 @@ namespace activations {
                     sigmoid_forward_naive_kernel<<<gridSize, blockSize>>>(d_Z, d_A, size);
                     break;
                 case VAEStrategy::VECTORIZED:
-                    DEBUG("Launching sigmoid_forward_vectorized_kernel...");
+                    DEBUG("Launching sigmoid_forward_vec4_kernel...");
                     gridSize = ((size + 3) / 4 + blockSize - 1) / blockSize;
-                    sigmoid_forward_vectorized_kernel<<<gridSize, blockSize>>>(d_Z, d_A, size);
+                    sigmoid_forward_vec4_kernel<<<gridSize, blockSize>>>(d_Z, d_A, size);
                     break;
                 default:
                     DEBUG("Launching sigmoid_forward_naive_kernel...");
@@ -251,9 +271,9 @@ namespace activations {
                     sigmoid_backward_naive_kernel<<<gridSize, blockSize>>>(d_A, d_dA, d_dZ, size);
                     break;
                 case VAEStrategy::VECTORIZED:
-                    DEBUG("Launching sigmoid_backward_vectorized_kernel...");
+                    DEBUG("Launching sigmoid_backward_vec4_kernel...");
                     gridSize = ((size + 3) / 4 + blockSize - 1) / blockSize;
-                    sigmoid_backward_vectorized_kernel<<<gridSize, blockSize>>>(d_A, d_dA, d_dZ, size);
+                    sigmoid_backward_vec4_kernel<<<gridSize, blockSize>>>(d_A, d_dA, d_dZ, size);
                     break;
                 default:
                     DEBUG("Launching sigmoid_backward_naive_kernel...");

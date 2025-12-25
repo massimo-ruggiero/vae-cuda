@@ -4,6 +4,10 @@
 #include <math.h>
 
 
+// ==============================
+// Kernles: ADAM
+// ==============================
+
 __global__ void adam_step_naive_kernel(const float* g,
                                        float* theta,
                                        float* m,
@@ -45,6 +49,11 @@ __global__ void adam_step_vectorized_kernel(const float* g,
                                             float epsilon) {
     // TODO                                            
 }
+
+
+// ==============================
+// Host API
+// ==============================
 
 namespace optimizers {
 

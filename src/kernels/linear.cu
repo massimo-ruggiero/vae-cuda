@@ -3,7 +3,11 @@
 #include "utils.cuh"
 #include <cuda_runtime.h>
 
-// add_bias
+
+// ==============================
+// Kernels: Add bias
+// ==============================
+
 __global__ void add_bias_naive_kernel(float* Z,
                                       const float* b,
                                       int batch_size,
@@ -15,7 +19,7 @@ __global__ void add_bias_naive_kernel(float* Z,
     }
 }
 
-__global__ void add_bias_vectorized_kernel(float* Z,
+__global__ void add_bias_vec4_kernel(float* Z,
                                            const float* b,
                                            int batch_size,
                                            int output_dim) {
@@ -39,7 +43,11 @@ __global__ void add_bias_vectorized_kernel(float* Z,
     }
 }
 
-// compute db                                           
+
+// ==============================
+// Kernels: db
+// ==============================     
+
 __global__ void db_naive_kernel(const float* d_dZ,
                                  float* d_db,
                                  int batch_size,
@@ -56,6 +64,10 @@ __global__ void db_naive_kernel(const float* d_dZ,
 
 // TODO: vedere se fare altre versioni
 
+
+// ==============================
+// Host API
+// ==============================
 
 namespace linear {
 
@@ -79,10 +91,10 @@ namespace linear {
                 add_bias_naive_kernel<<<gridSize, blockSize>>>(d_Z, d_b, batch_size, output_dim);
                 break;
             case VAEStrategy::VECTORIZED:
-                DEBUG("Launching add_bias_vectorized_kernel...");
+                DEBUG("Launching add_bias_vec4_kernel...");
                 dim3 gridSize(((output_dim + 3) / 4 + blockSize.x - 1) / blockSize.x,
                               (batch_size + blockSize.y - 1) / blockSize.y);
-                add_bias_vectorized_kernel<<<gridSize, blockSize>>>(d_Z, d_b, batch_size, output_dim);
+                add_bias_vec4_kernel<<<gridSize, blockSize>>>(d_Z, d_b, batch_size, output_dim);
                 break;
             default:
                 DEBUG("Launching add_bias_naive_kernel...");

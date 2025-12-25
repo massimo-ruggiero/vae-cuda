@@ -14,12 +14,12 @@ __global__ void init_states_kernel(curandStatePhilox4_32_10_t* states,
     }
 }
 
-__global__ void reparametrization_forward_kernel(const float* mu,
-                                                 const float* logvar,
-                                                 float* z,
-                                                 float* epsilon,
-                                                 curandStatePhilox4_32_10_t* states,
-                                                 int size) {
+__global__ void reparametrization_forward_naive_kernel(const float* mu,
+                                                       const float* logvar,
+                                                       float* z,
+                                                       float* epsilon,
+                                                       curandStatePhilox4_32_10_t* states,
+                                                       int size) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx < size) {
         curandStatePhilox4_32_10_t state = states[idx];
@@ -33,18 +33,36 @@ __global__ void reparametrization_forward_kernel(const float* mu,
     }
 }
 
-__global__ void reparametrization_backward_kernel(const float* dz,
-                                                  const float* logvar,
-                                                  const float* epsilon,
-                                                  float* dmu,
-                                                  float* dlogvar,
-                                                  int size) {
+__global__ void reparametrization_forward_vectorized_kernel(const float* mu,
+                                                            const float* logvar,
+                                                            float* z,
+                                                            float* epsilon,
+                                                            curandStatePhilox4_32_10_t* states,
+                                                            int size) {
+    // TODO: con curand_normal4
+}
+
+__global__ void reparametrization_backward_naive_kernel(const float* dz,
+                                                        const float* logvar,
+                                                        const float* epsilon,
+                                                        float* dmu,
+                                                        float* dlogvar,
+                                                        int size) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx < size) {
         dmu[idx] = dz[idx];
         float sigma_idx = expf(0.5f * logvar[idx]);
         dlogvar[idx] = dz[idx] * epsilon[idx] * 0.5f * sigma_idx;
     }
+}
+
+__global__ void reparametrization_backward_vectorized_kernel(const float* dz,
+                                                             const float* logvar,
+                                                             const float* epsilon,
+                                                             float* dmu,
+                                                             float* dlogvar,
+                                                             int size) {
+    // TODO
 }
 
 namespace reparametrization {
@@ -71,7 +89,7 @@ namespace reparametrization {
         const int blockSize = 256;
         const int gridSize = (size + blockSize - 1) / blockSize;
         DEBUG("Launching reparametrization_forward_kernel...");
-        reparametrization_forward_kernel<<<gridSize, blockSize>>>(d_mu, d_logvar, d_z, d_epsilon, d_states, size);
+        reparametrization_forward_naive_kernel<<<gridSize, blockSize>>>(d_mu, d_logvar, d_z, d_epsilon, d_states, size);
 
         CUDA_CHECK(cudaGetLastError());
     }
@@ -86,7 +104,7 @@ namespace reparametrization {
         const int blockSize = 256;
         const int gridSize = (size + blockSize - 1) / blockSize;
         DEBUG("Launching reparametrization_backward_kernel...");
-        reparametrization_backward_kernel<<<gridSize, blockSize>>>(d_dz, d_logvar, d_epsilon, d_dmu, d_dlogvar, size);
+        reparametrization_backward_naive_kernel<<<gridSize, blockSize>>>(d_dz, d_logvar, d_epsilon, d_dmu, d_dlogvar, size);
 
         CUDA_CHECK(cudaGetLastError());
     }
