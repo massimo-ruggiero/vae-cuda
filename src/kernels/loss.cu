@@ -26,8 +26,8 @@ __device__ __forceinline__ float compute_kl(float mu, float logvar) {
 // Forward kernels: BCE
 // ==============================
 
-__global__ void bce_forward_naive_kernel(const float* X,
-                                         const float* Z,
+__global__ void bce_forward_naive_kernel(const float* __restrict__ X,
+                                         const float* __restrict__ Z,
                                          float* bce_sum,
                                          int size,
                                          float inv_batch) {                                        
@@ -38,8 +38,8 @@ __global__ void bce_forward_naive_kernel(const float* X,
     }
 }
 
-__global__ void bce_forward_reduction_kernel(const float* X,
-                                             const float* Z,
+__global__ void bce_forward_reduction_kernel(const float* __restrict__ X,
+                                             const float* __restrict__ Z,
                                              float* bce_sum,
                                              int size,
                                              float inv_batch) {  
@@ -67,8 +67,8 @@ __global__ void bce_forward_reduction_kernel(const float* X,
     }
 }
 
-__global__ void bce_forward_unrolled_reduction_kernel(const float* X,
-                                                      const float* Z,
+__global__ void bce_forward_unrolled_reduction_kernel(const float* __restrict__ X,
+                                                      const float* __restrict__ Z,
                                                       float* bce_sum,
                                                       int size,
                                                       float inv_batch) {  
@@ -106,8 +106,8 @@ __global__ void bce_forward_unrolled_reduction_kernel(const float* X,
     }
 }
 
-__global__ void bce_forward_warp_reduction_kernel(const float* X,
-                                                  const float* Z,
+__global__ void bce_forward_warp_reduction_kernel(const float* __restrict__ X,
+                                                  const float* __restrict__ Z,
                                                   float* bce_sum,
                                                   int size,
                                                   float inv_batch) {  
@@ -132,6 +132,7 @@ __global__ void bce_forward_warp_reduction_kernel(const float* X,
 
     if (tid < WARP_SIZE) {
         float val = sdata[tid];
+        if (blockDim.x >= 64) val += sdata[tid + 32];
         for (int offset = 16; offset > 0; offset /= 2) {
             val += __shfl_down_sync(FULL_MASK, val , offset);
         }
@@ -141,40 +142,20 @@ __global__ void bce_forward_warp_reduction_kernel(const float* X,
     }
 }
 
-__global__ void bce_forward_vec4_kernel(const float* X,
-                                              const float* Z,
-                                              float* bce_sum,
-                                              int size,
-                                              float inv_batch) {  
+__global__ void bce_forward_grid_stride_kernel(const float* __restrict__ X,
+                                               const float* __restrict__ Z,
+                                               float* bce_sum,
+                                               int size,
+                                               float inv_batch) {  
     // TODO
-    extern __shared__ float sdata[];
+}
 
-    unsigned int tid = threadIdx.x;
-    unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    
-    float local = 0.0f;
-    if (idx < size) {
-        local = compute_bce(X[idx], Z[idx]);
-    }
-    sdata[tid] = local;
-    __syncthreads();
-
-    for (unsigned int stride = blockDim.x / 2; stride > WARP_SIZE; stride >>= 1) {
-        if (tid < stride) {
-            sdata[tid] += sdata[tid + stride];
-        }
-        __syncthreads();
-    }
-
-    if (tid < WARP_SIZE) {
-        float val = sdata[tid];
-        for (int offset = 16; offset > 0; offset /= 2) {
-            val += __shfl_down_sync(FULL_MASK, val , offset);
-        }
-        if (tid == 0) {
-            atomicAdd(bce_sum, val * inv_batch);
-        }
-    }
+__global__ void bce_forward_vec4_kernel(const float* __restrict__ X,
+                                        const float* __restrict__ Z,
+                                        float* bce_sum,
+                                        int size,
+                                        float inv_batch) {  
+    // TODO
 }
 
 
@@ -182,8 +163,8 @@ __global__ void bce_forward_vec4_kernel(const float* X,
 // Forward kernels: KL
 // ==============================
 
-__global__ void kl_forward_naive_kernel(const float* mu,
-                                        const float* logvar,
+__global__ void kl_forward_naive_kernel(const float* __restrict__ mu,
+                                        const float* __restrict__ logvar,
                                         float* kl_sum,
                                         int size,
                                         float inv_batch) {
@@ -194,8 +175,8 @@ __global__ void kl_forward_naive_kernel(const float* mu,
     }
 }
 
-__global__ void kl_forward_reduction_kernel(const float* mu,
-                                            const float* logvar,
+__global__ void kl_forward_reduction_kernel(const float* __restrict__ mu,
+                                            const float* __restrict__ logvar,
                                             float* kl_sum,
                                             int size,
                                             int inv_batch) {
@@ -223,8 +204,8 @@ __global__ void kl_forward_reduction_kernel(const float* mu,
     }
 }
 
-__global__ void kl_forward_unrolled_reduction_kernel(const float* X,
-                                                     const float* Z,
+__global__ void kl_forward_unrolled_reduction_kernel(const float* __restrict__ X,
+                                                     const float* __restrict__ Z,
                                                      float* bce_sum,
                                                      int size,
                                                      float inv_batch) {  
@@ -262,8 +243,8 @@ __global__ void kl_forward_unrolled_reduction_kernel(const float* X,
     }
 }
 
-__global__ void kl_forward_warp_reduction_kernel(const float* X,
-                                                 const float* Z,
+__global__ void kl_forward_warp_reduction_kernel(const float* __restrict__ X,
+                                                 const float* __restrict__ Z,
                                                  float* bce_sum,
                                                  int size,
                                                  float inv_batch) {  
@@ -288,6 +269,7 @@ __global__ void kl_forward_warp_reduction_kernel(const float* X,
 
     if (tid < WARP_SIZE) {
         float val = sdata[tid];
+        if (blockDim.x >= 64) val += sdata[tid + 32];
         for (int offset = 16; offset > 0; offset /= 2) {
             val += __shfl_down_sync(FULL_MASK, val , offset);
         }
@@ -297,40 +279,20 @@ __global__ void kl_forward_warp_reduction_kernel(const float* X,
     }
 }
 
-__global__ void kl_forward_vec4_kernel(const float* X,
-                                             const float* Z,
+__global__ void kl_forward_grid_stride_kernel(const float* __restrict__ X,
+                                              const float* __restrict__ Z,
+                                              float* bce_sum,
+                                              int size,
+                                              float inv_batch) {  
+    // TODO
+}
+
+__global__ void kl_forward_vec4_kernel(const float* __restrict__ X,
+                                             const float* __restrict__ Z,
                                              float* bce_sum,
                                              int size,
                                              float inv_batch) {  
     // TODO
-    extern __shared__ float sdata[];
-
-    unsigned int tid = threadIdx.x;
-    unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    
-    float local = 0.0f;
-    if (idx < size) {
-        local = compute_kl(X[idx], Z[idx]);
-    }
-    sdata[tid] = local;
-    __syncthreads();
-
-    for (unsigned int stride = blockDim.x / 2; stride > WARP_SIZE; stride >>= 1) {
-        if (tid < stride) {
-            sdata[tid] += sdata[tid + stride];
-        }
-        __syncthreads();
-    }
-
-    if (tid < WARP_SIZE) {
-        float val = sdata[tid];
-        for (int offset = 16; offset > 0; offset /= 2) {
-            val += __shfl_down_sync(FULL_MASK, val , offset);
-        }
-        if (tid == 0) {
-            atomicAdd(bce_sum, val * inv_batch);
-        }
-    }
 }
 
 
@@ -338,9 +300,9 @@ __global__ void kl_forward_vec4_kernel(const float* X,
 // Backward kernels: BCE
 // ==============================
 
-__global__ void bce_backward_naive_kernel(const float* X,
-                                          const float* X_hat,
-                                          float* dA,
+__global__ void bce_backward_naive_kernel(const float* __restrict__ X,
+                                          const float* __restrict__ X_hat,
+                                          float* __restrict__ dA,
                                           int size) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx < size) {
@@ -348,9 +310,9 @@ __global__ void bce_backward_naive_kernel(const float* X,
     }
 }
 
-__global__ void bce_backward_vec4_kernel(const float* X,
-                                               const float* X_hat,
-                                               float* dA,
+__global__ void bce_backward_vec4_kernel(const float* __restrict__ X,
+                                               const float* __restrict__ X_hat,
+                                               float*  __restrict__ dA,
                                                int size) {
     int idx = (blockIdx.x * blockDim.x + threadIdx.x) * 4;
     if (idx + 3 < size) {
@@ -376,10 +338,10 @@ __global__ void bce_backward_vec4_kernel(const float* X,
 // Backward kernels: KL
 // ==============================
 
-__global__ void kl_backward_naive_kernel(const float* mu,
-                                         const float* logvar,
-                                         float* dmu,
-                                         float* dlogvar,
+__global__ void kl_backward_naive_kernel(const float* __restrict__ mu,
+                                         const float* __restrict__ logvar,
+                                         float* __restrict__ dmu,
+                                         float* __restrict__ dlogvar,
                                          int size,
                                          float beta) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -389,12 +351,12 @@ __global__ void kl_backward_naive_kernel(const float* mu,
     }
 }
 
-__global__ void kl_backward_vec4_kernel(const float* mu,
-                                              const float* logvar,
-                                              float* dmu,
-                                              float* dlogvar,
-                                              int size,
-                                              float beta) {
+__global__ void kl_backward_vec4_kernel(const float* __restrict__ mu,
+                                        const float* __restrict__ logvar,
+                                        float* __restrict__ dmu,
+                                        float* __restrict__ dlogvar,
+                                        int size,
+                                        float beta) {
     int idx = (blockIdx.x * blockDim.x + threadIdx.x) * 4;
     if (idx + 3 < size) {
         float4 mu_vec = *reinterpret_cast<const float4*>(&mu[idx]);

@@ -3,11 +3,13 @@
 #include <cstdlib>
 #include <cuda_runtime.h>
 
+
 #ifdef ENABLE_DEBUG
     #define DEBUG(...) do { printf(__VA_ARGS__); printf("\n"); } while(0)
 #else
     #define DEBUG(...)
 #endif
+
 
 #define CUDA_CHECK(err) do {                                      \
     cudaError_t err_ = (err);                                     \

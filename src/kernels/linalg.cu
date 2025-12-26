@@ -10,14 +10,14 @@ static constexpr int TILE_DIM = 16;
 // Kernels: SGEMM
 // ==============================
 
-__global__ void sgemm_naive_kernel(const float* A,
-                                    const float* B,
-                                    float* C,
-                                    int M,
-                                    int K,
-                                    int N,
-                                    bool transpose_A,
-                                    bool transpose_B) {
+__global__ void sgemm_naive_kernel(const float* __restrict__ A,
+                                   const float* __restrict__ B,
+                                   float* __restrict__ C,
+                                   int M,
+                                   int K,
+                                   int N,
+                                   bool transpose_A,
+                                   bool transpose_B) {
     int row = blockIdx.y * blockDim.y + threadIdx.y;
     int col = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -41,9 +41,9 @@ __global__ void sgemm_naive_kernel(const float* A,
     }
 }
 
-__global__ void sgemm_tiling_kernel(const float* A,
-                                    const float* B,
-                                    float* C,
+__global__ void sgemm_tiling_kernel(const float* __restrict__ A,
+                                    const float* __restrict__ B,
+                                    float* __restrict__ C,
                                     int M,
                                     int K,
                                     int N,
@@ -102,9 +102,9 @@ __global__ void sgemm_tiling_kernel(const float* A,
     C[row * C_cols + col] = sum;
 }
 
-__global__ void sgemm_padding_kernel(const float* A,
-                                    const float* B,
-                                    float* C,
+__global__ void sgemm_padding_kernel(const float* __restrict__ A,
+                                    const float* __restrict__ B,
+                                    float* __restrict__ C,
                                     int M,
                                     int K,
                                     int N,
@@ -168,18 +168,18 @@ __global__ void sgemm_padding_kernel(const float* A,
 // Kernels: Add inplace
 // ==============================
 
-__global__ void add_inplace_naive_kernel(float* A, 
-                                   const float* B, 
-                                   int size) {
+__global__ void add_inplace_naive_kernel(float* __restrict__ A, 
+                                         const float* __restrict__ B, 
+                                         int size) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx < size) {
         A[idx] += B[idx];
     }
 }
 
-__global__ void add_inplace_vec4_kernel(float* A, 
-                                              const float* B, 
-                                              int size) {
+__global__ void add_inplace_vec4_kernel(float* __restrict__ A, 
+                                        const float* __restrict__ B, 
+                                        int size) {
     int idx = (blockIdx.x * blockDim.x + threadIdx.x) * 4; 
     if (idx + 3 < size) {
         float4 A_vec = *reinterpret_cast<float4*>(&A[idx]);

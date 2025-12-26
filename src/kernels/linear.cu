@@ -8,8 +8,8 @@
 // Kernels: Add bias
 // ==============================
 
-__global__ void add_bias_naive_kernel(float* Z,
-                                      const float* b,
+__global__ void add_bias_naive_kernel(float* __restrict__ Z,
+                                      const float* __restrict__ b,
                                       int batch_size,
                                       int output_dim) {
     int row = blockIdx.y * blockDim.y + threadIdx.y;
@@ -19,10 +19,10 @@ __global__ void add_bias_naive_kernel(float* Z,
     }
 }
 
-__global__ void add_bias_vec4_kernel(float* Z,
-                                           const float* b,
-                                           int batch_size,
-                                           int output_dim) {
+__global__ void add_bias_vec4_kernel(float* __restrict__ Z,
+                                     const float* __restrict__ b,
+                                     int batch_size,
+                                     int output_dim) {
     int row = blockIdx.y * blockDim.y + threadIdx.y;
     int col = (blockIdx.x * blockDim.x + threadIdx.x) * 4;
     if (row < batch_size && col + 3 < output_dim) {
@@ -48,10 +48,10 @@ __global__ void add_bias_vec4_kernel(float* Z,
 // Kernels: db
 // ==============================     
 
-__global__ void db_naive_kernel(const float* d_dZ,
-                                 float* d_db,
-                                 int batch_size,
-                                 int output_dim) {
+__global__ void db_naive_kernel(const float* __restrict__ d_dZ,
+                                float* __restrict__ d_db,
+                                int batch_size,
+                                int output_dim) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx < output_dim) {
         float sum = 0.0f;
