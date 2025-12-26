@@ -1,5 +1,6 @@
 #include "optimizers.cuh"
 #include "utils.cuh"
+
 #include <cuda_runtime.h>
 #include <math.h>
 
@@ -37,17 +38,63 @@ __global__ void adam_step_naive_kernel(const float* __restrict__ g,
     }
 }
 
-__global__ void adam_step_vectorized_kernel(const float* __restrict__ g,
-                                            float* __restrict__ theta,
-                                            float* __restrict__ m,
-                                            float* __restrict__ v,
-                                            int t,
-                                            int size,
-                                            float lr,
-                                            float beta1,
-                                            float beta2,
-                                            float epsilon) {
-    // TODO                                            
+__global__ void adam_step_vec4_kernel(const float* __restrict__ g,
+                                      float* __restrict__ theta,
+                                      float* __restrict__ m,
+                                      float* __restrict__ v,
+                                      int t,
+                                      int size,
+                                      float lr,
+                                      float beta1,
+                                      float beta2,
+                                      float epsilon) {
+    int idx = (blockIdx.x * blockDim.x + threadIdx.x) * 4;
+    
+    float bias_corr1 = 1.0f - powf(beta1, (float)t);
+    float bias_corr2 = 1.0f - powf(beta2, (float)t);
+
+    if (idx + 3 < size) {
+        float4 g_vec = *reinterpret_cast<const float4*>(&g[idx]);
+        float4 theta_vec = *reinterpret_cast<float4*>(&theta[idx]);
+        float4 m_vec = *reinterpret_cast<float4*>(&m[idx]);
+        float4 v_vec = *reinterpret_cast<float4*>(&v[idx]);
+
+        auto compute_adam = [&](float g_val, float &m_val, float &v_val, float &theta_val) {
+            m_val = beta1 * m_val + (1.0f - beta1) * g_val;
+            v_val = beta2 * v_val + (1.0f - beta2) * g_val * g_val;
+
+            float m_hat = m_val / bias_corr1;
+            float v_hat = v_val / bias_corr2;
+
+            theta_val -= lr * m_hat / (sqrtf(v_hat) + epsilon);
+        };
+
+        compute_adam(g_vec.x, m_vec.x, v_vec.x, theta_vec.x);
+        compute_adam(g_vec.y, m_vec.y, v_vec.y, theta_vec.y);
+        compute_adam(g_vec.z, m_vec.z, v_vec.z, theta_vec.z);
+        compute_adam(g_vec.w, m_vec.w, v_vec.w, theta_vec.w);
+
+        *reinterpret_cast<float4*>(&theta[idx]) = theta_vec;
+        *reinterpret_cast<float4*>(&m[idx]) = m_vec;
+        *reinterpret_cast<float4*>(&v[idx]) = v_vec;
+    } else if (idx < size) {
+        for (int i = idx; i < size; ++i) {
+            float g_val = g[i];
+            float m_val = m[i];
+            float v_val = v[i];
+
+            m_val = beta1 * m_val + (1.0f - beta1) * g_val;
+            v_val = beta2 * v_val + (1.0f - beta2) * g_val * g_val;
+
+            float m_hat = m_val / bias_corr1;
+            float v_hat = v_val / bias_corr2;
+
+            theta[i] -= lr * m_hat / (sqrtf(v_hat) + epsilon);
+
+            m[i] = m_val;
+            v[i] = v_val;
+        }
+    }
 }
 
 
@@ -75,19 +122,21 @@ namespace optimizers {
 
             switch(strategy) {
                 case VAEStrategy::NAIVE:
+                case VAEStrategy::SHARED_MEMORY_TILING:
+                case VAEStrategy::PADDING:
+                case VAEStrategy::REGISTER_TILING:
+                case VAEStrategy::REDUCTION:
+                case VAEStrategy::UNROLLED_REDUCTION:
+                case VAEStrategy::WARP_REDUCTION:
                     gridSize = (size + blockSize - 1) / blockSize;
                     DEBUG("Launching adam_step_naive_kernel...");
-                    adam_step_naive:kernel<<<gridSize, blockSize>>>(d_g, d_theta, d_m, d_v, t, size, lr, beta1, beta2, epsilon);
+                    adam_step_naive_kernel<<<gridSize, blockSize>>>(d_g, d_theta, d_m, d_v, t, size, lr, beta1, beta2, epsilon);
                     break;
                 case VAEStrategy::VECTORIZED:
-                    gridSize = ((size + 3) / 4 + blockSize - 1) / blockSize;
-                    DEBUG("Launching adam_step_vectorized_kernel...");
-                    adam_step_vectorized_kernel<<<gridSize, blockSize>>>(d_g, d_theta, d_m, d_v, t, size, lr, beta1, beta2, epsilon);
-                    break;
                 default:
-                    gridSize = (size + blockSize - 1) / blockSize;
-                    DEBUG("Launching adam_step_naive_kernel...");
-                    adam_step_kernel<<<gridSize, blockSize>>>(d_g, d_theta, d_m, d_v, t, size, lr, beta1, beta2, epsilon);
+                    gridSize = ((size + 3) / 4 + blockSize - 1) / blockSize;
+                    DEBUG("Launching adam_step_vec4_kernel...");
+                    adam_step_vec4_kernel<<<gridSize, blockSize>>>(d_g, d_theta, d_m, d_v, t, size, lr, beta1, beta2, epsilon);
                     break;
             }
 

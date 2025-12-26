@@ -1,5 +1,6 @@
 #include "activations.cuh"
 #include "utils.cuh"
+
 #include <cuda_runtime.h>
 #include <math.h>
 
@@ -266,19 +267,21 @@ namespace activations {
             int gridSize;
             switch(strategy) {
                 case VAEStrategy::NAIVE:
+                case VAEStrategy::SHARED_MEMORY_TILING: 
+                case VAEStrategy::PADDING: 
+                case VAEStrategy::REGISTER_TILING: 
+                case VAEStrategy::REDUCTION: 
+                case VAEStrategy::UNROLLED_REDUCTION: 
+                case VAEStrategy::WARP_REDUCTION: 
                     DEBUG("Launching sigmoid_backward_naive_kernel...");
                     gridSize = (size + blockSize - 1) / blockSize;
                     sigmoid_backward_naive_kernel<<<gridSize, blockSize>>>(d_A, d_dA, d_dZ, size);
                     break;
                 case VAEStrategy::VECTORIZED:
+                default:
                     DEBUG("Launching sigmoid_backward_vec4_kernel...");
                     gridSize = ((size + 3) / 4 + blockSize - 1) / blockSize;
                     sigmoid_backward_vec4_kernel<<<gridSize, blockSize>>>(d_A, d_dA, d_dZ, size);
-                    break;
-                default:
-                    DEBUG("Launching sigmoid_backward_naive_kernel...");
-                    gridSize = (size + blockSize - 1) / blockSize;
-                    sigmoid_backward_naive_kernel<<<gridSize, blockSize>>>(d_A, d_dA, d_dZ, size);
                     break;
             }
             CUDA_CHECK(cudaGetLastError());

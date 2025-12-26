@@ -20,7 +20,25 @@ VAEBuffers::VAEBuffers(const VAEConfig& cfg) : config(cfg) {
     // reparametrization
     d_z.allocate(batch_size * latent_dim);
     d_epsilon.allocate(batch_size * latent_dim);
-    CUDA_CHECK(cudaMalloc(&d_states, batch_size * latent_dim * sizeof(curandStatePhilox4_32_10_t)));
+
+    size_t num_states = 0;
+    switch(config.strategy) {
+        case VAEStrategy::NAIVE:
+        case VAEStrategy::SHARED_MEMORY_TILING:
+        case VAEStrategy::PADDING:
+        case VAEStrategy::REGISTER_TILING:
+        case VAEStrategy::REDUCTION:
+        case VAEStrategy::UNROLLED_REDUCTION:
+        case VAEStrategy::WARP_REDUCTION:
+            num_states = batch_size * latent_dim;
+            break;
+        case VAEStrategy::VECTORIZED:
+        default:
+            num_states = (batch_size * latent_dim + 3) / 4;
+            break;
+    }
+
+    CUDA_CHECK(cudaMalloc(&d_states, num_states * sizeof(curandStatePhilox4_32_10_t)));
 
     // decoder
     dec1.allocate(batch_size, latent_dim, hidden_dim, true);

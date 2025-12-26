@@ -1,6 +1,7 @@
 #include "linear.cuh"
 #include "linalg.cuh"
 #include "utils.cuh"
+
 #include <cuda_runtime.h>
 
 
@@ -85,23 +86,24 @@ namespace linear {
         dim3 blockSize(16, 16);
         switch(strategy) {
             case VAEStrategy::NAIVE:
+            case VAEStrategy::SHARED_MEMORY_TILING:
+            case VAEStrategy::PADDING:
+            case VAEStrategy::REGISTER_TILING:
+            case VAEStrategy::REDUCTION:
+            case VAEStrategy::UNROLLED_REDUCTION:
+            case VAEStrategy::WARP_REDUCTION:
                 DEBUG("Launching add_bias_naive_kernel...");
                 dim3 gridSize((output_dim + blockSize.x - 1) / blockSize.x,
                               (batch_size + blockSize.y - 1) / blockSize.y);
                 add_bias_naive_kernel<<<gridSize, blockSize>>>(d_Z, d_b, batch_size, output_dim);
                 break;
             case VAEStrategy::VECTORIZED:
+            default:
                 DEBUG("Launching add_bias_vec4_kernel...");
                 dim3 gridSize(((output_dim + 3) / 4 + blockSize.x - 1) / blockSize.x,
                               (batch_size + blockSize.y - 1) / blockSize.y);
                 add_bias_vec4_kernel<<<gridSize, blockSize>>>(d_Z, d_b, batch_size, output_dim);
                 break;
-            default:
-                DEBUG("Launching add_bias_naive_kernel...");
-                dim3 gridSize((output_dim + blockSize.x - 1) / blockSize.x,
-                              (batch_size + blockSize.y - 1) / blockSize.y);
-                add_bias_naive_kernel<<<gridSize, blockSize>>>(d_Z, d_b, batch_size, output_dim);
-                break; 
         }
         
         CUDA_CHECK(cudaGetLastError());

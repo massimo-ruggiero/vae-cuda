@@ -12,11 +12,11 @@ namespace linalg {
                int N,
                bool transpose_A = false,
                bool transpose_B = false,
-               const VAEStrategy& strategy = VAEStrategy::NAIVE);
+               const VAEStrategy& strategy);
 
     void add_in_place(float* d_A, 
                       const float* d_B, 
                       int size,
-                      const VAEStrategy& strategy = VAEStrategy::NAIVE);
+                      const VAEStrategy& strategy);
 
 } //namespace linalg

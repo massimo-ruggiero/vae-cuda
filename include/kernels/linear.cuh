@@ -10,7 +10,7 @@ namespace linear {
                     int batch_size,
                     int input_dim,
                     int output_dim,
-                    const VAEStrategy& strategy = VAEStrategy::NAIVE);
+                    const VAEStrategy& strategy);
 
     void backward(const float* d_X,
                     const float* d_W,
@@ -21,6 +21,6 @@ namespace linear {
                     int batch_size,
                     int input_dim,
                     int output_dim,
-                    const VAEStrategy& strategy = VAEStrategy::NAIVE);
+                    const VAEStrategy& strategy);
 
 } // namespace linear

@@ -46,8 +46,8 @@ VAE::VAE(const VAEConfig& config)
       d_bce_loss_(nullptr),
       d_kl_loss_(nullptr) {
 
-    int total_states = config.batch_size * config.latent_dim;
-    reparametrization::init(buf_.d_states, total_states, 42);
+    int num_states = config.batch_size * config.latent_dim;
+    reparametrization::init(buf_.d_states, num_states, 42, strategy);
 
     initialize_weights();
     ensure_training_resources();
@@ -101,30 +101,23 @@ float VAE::train_step(const float* h_batch){
 
     grads_->zero_all_grads();
 
-    switch (buf_.config.strategy) {
-        case VAEStrategy::NAIVE: 
-            vae::naive::forward(buf_); 
-            break;
-    }
+    vae::forward(buf_); 
 
     float h_loss = 0.0f;
-    loss::forward::naive(buf_.d_X.ptr, 
-                         buf_.dec2.Z.ptr, 
-                         buf_.enc2_mu.Z.ptr,        // mu
-                         buf_.enc2_logvar.Z.ptr,    // logvar
-                         d_bce_loss_, 
-                         d_kl_loss_, 
-                         &h_loss,
-                         buf_.config.batch_size, 
-                         buf_.config.input_dim, 
-                         buf_.config.latent_dim, 
-                         buf_.config.beta);
+    loss::forward(buf_.d_X.ptr, 
+                  buf_.dec2.Z.ptr, 
+                  buf_.enc2_mu.Z.ptr,        // mu
+                  buf_.enc2_logvar.Z.ptr,    // logvar
+                  d_bce_loss_, 
+                  d_kl_loss_, 
+                  &h_loss,
+                  buf_.config.batch_size, 
+                  buf_.config.input_dim, 
+                  buf_.config.latent_dim, 
+                  buf_.config.beta,
+                  buf_.strategy);
     
-    switch (buf_.config.strategy) {
-        case VAEStrategy::NAIVE: 
-            vae::naive::backward(buf_, *grads_); 
-            break;
-    }
+    vae::backward(buf_, *grads_); 
 
     float h_bce = 0.0f, h_kl = 0.0f;
     CUDA_CHECK(cudaMemcpy(&h_bce, d_bce_loss_, 
@@ -144,9 +137,7 @@ void VAE::encode(const float* h_input, float* h_mu, float* h_logvar) {
                           buf_.config.batch_size * buf_.config.input_dim * sizeof(float), 
                           cudaMemcpyHostToDevice));
 
-    switch (buf_.config.strategy) {
-        case VAEStrategy::NAIVE: vae::naive::encoder_pass(buf_); break;
-    }
+    vae::encoder_pass(buf_);
 
     CUDA_CHECK(cudaMemcpy(h_mu, buf_.enc2_mu.Z.ptr, 
                           buf_.config.batch_size * buf_.config.latent_dim * sizeof(float), 
@@ -163,11 +154,7 @@ void VAE::decode(const float* h_z, float* h_output) {
                           buf_.config.batch_size * buf_.config.latent_dim * sizeof(float), 
                           cudaMemcpyHostToDevice));
 
-    switch (buf_.config.strategy) {
-        case VAEStrategy::NAIVE: 
-            vae::naive::decoder_pass(buf_); 
-            break;
-    }
+    vaedecoder_pass(buf_); 
 
     CUDA_CHECK(cudaMemcpy(h_output, buf_.d_X_hat.ptr, 
                           buf_.config.batch_size * buf_.config.input_dim * sizeof(float), 
@@ -179,11 +166,7 @@ void VAE::reconstruct(const float* h_input, float* h_output) {
                buf_.config.batch_size * buf_.config.input_dim * sizeof(float), 
                cudaMemcpyHostToDevice));
     
-    switch (buf_.config.strategy) {
-        case VAEStrategy::NAIVE: 
-            vae::naive::forward(buf_); 
-            break;
-    }
+    vae::forward(buf_); 
 
     CUDA_CHECK(cudaMemcpy(h_output, buf_.d_X_hat.ptr, 
                buf_.config.batch_size * buf_.config.input_dim * sizeof(float), 

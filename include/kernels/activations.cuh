@@ -9,15 +9,15 @@ namespace activations {
         void forward(const float* d_Z,
                     float* d_A,
                     int size,
-                    float d_alpha = 0.2f
-                    const VAEStrategy& strategy = VAEStrategy::NAIVE);
+                    float d_alpha,
+                    const VAEStrategy& strategy);
 
         void backward(const float* d_Z,
                     const float* d_dA,
                     float* d_dZ,
                     int size,
-                    float alpha = 0.2f,
-                    const VAEStrategy& strategy = VAEStrategy::NAIVE);
+                    float alpha,
+                    const VAEStrategy& strategy);
 
     } // namespace leaky_relu
 
@@ -26,13 +26,13 @@ namespace activations {
         void forward(const float* d_Z,
                     float* d_A,
                     int size
-                    const VAEStrategy& strategy = VAEStrategy::NAIVE);
+                    const VAEStrategy& strategy);
 
         void backward(const float* d_A,
                     const float* d_dA,
                     float* d_dZ,
                     int size
-                    const VAEStrategy& strategy = VAEStrategy::NAIVE);
+                    const VAEStrategy& strategy);
 
     } // namespace sigmoid
 

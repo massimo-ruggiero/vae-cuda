@@ -15,7 +15,7 @@ namespace loss {
                  int input_dim,
                  int output_dim,
                  float beta = 1.0f,
-                 const VAEStrategy& strategy = VAEStrategy::NAIVE);
+                 const VAEStrategy& strategy);
 
     namespace backward {
 
@@ -30,7 +30,7 @@ namespace loss {
                 float* d_dlogvar,
                 int size,
                 float beta = 1.0f,
-                const VAEStrategy& strategy = VAEStrategy::NAIVE);
+                const VAEStrategy& strategy);
 
     } // namespace backward
 

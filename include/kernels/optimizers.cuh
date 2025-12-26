@@ -15,7 +15,7 @@ namespace optimizers {
                 float beta1 = 0.9f,
                 float beta2 = 0.999f,
                 float epsilon = 1e-8f,
-                const VAEStrategy& strategy = VAEStrategy::NAIVE);
+                const VAEStrategy& strategy);
 
     }
 

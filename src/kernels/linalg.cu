@@ -1,9 +1,11 @@
 #include "linalg.cuh"
 #include "utils.cuh"
+
 #include <cuda_runtime.h>
 
 
 static constexpr int TILE_DIM = 16;
+static constexpr int VEC_SIZE = 4;
 
 
 // ==============================
@@ -163,6 +165,84 @@ __global__ void sgemm_padding_kernel(const float* __restrict__ A,
     C[row * C_cols + col] = sum;
 }
 
+__global__ void sgemm_register_tiling_kernel(const float* __restrict__ A,
+                                             const float* __restrict__ B,
+                                             float* __restrict__ C,
+                                             int M,
+                                             int K,
+                                             int N,
+                                             bool transpose_A,
+                                             bool transpose_B){
+    int row = (blockIdx.y * blockDim.y + threadIdx.y) * VEC_SIZE;
+    int col = blockIdx.x * blockDim.x + threadIdx.x;
+    
+    __shared__ float A_tile[TILE_DIM * VEC_SIZE][TILE_DIM + 1];
+    __shared__ float B_tile[TILE_DIM][TILE_DIM + 1];
+
+    int A_rows = transpose_A ? K : M;
+    int A_cols = transpose_A ? M : K;
+    int B_rows = transpose_B ? N : K;
+    int B_cols = transpose_B ? K : N;
+
+    int C_rows = A_rows;
+    int C_cols = B_cols;
+
+    if (row >= C_rows || col >= C_cols) return;
+
+    int numTiles = (A_cols + TILE_DIM - 1) / TILE_DIM;
+    float sum[VEC_SIZE] = {0.0f};
+    
+    #pragma unroll 
+    for (int t = 0; t < numTiles; ++t) {
+
+        // load tiles into shared memory
+        #pragma unroll 
+        for (int i = 0; i < VEC_SIZE; ++i) {
+            int current_row = row + i;
+            int kA = t * TILE_DIM + threadIdx.x;
+
+            if (current_row < A_rows && kA < A_cols) {
+                int idx_A = transpose_A ?
+                            kA * K + current_row:
+                            current_row * K + kA;
+                A_tile[threadIdx.y * VEC_SIZE + i][threadIdx.x] = A[idx_A];
+            } else {
+                A_tile[threadIdx.y * VEC_SIZE + i][threadIdx.x] = 0.0f;
+            }
+        }
+
+        int kB = t * TILE_DIM + threadIdx.y;
+        if (kB < B_rows && col < B_cols) {
+            int idx_B = transpose_B ?
+                        col * N + kB:
+                        kB * N + col;
+            B_tile[threadIdx.y][threadIdx.x] = B[idx_B];
+        } else {
+            B_tile[threadIdx.y][threadIdx.x] = 0.0f;
+        }
+                                           
+        __syncthreads();
+
+        // multiply tiles accumulate result
+        #pragma unroll 
+        for (int k = 0; k < TILE_DIM; ++k) {
+            float b_val = B_tile[k][threadIdx.x];
+
+            #pragma unroll
+            for (int i = 0; i < VEC_SIZE; ++i) {
+                sum[i] += A_tile[threadIdx.y * VEC_SIZE + i][k] * b_val;
+            }
+        }
+        __syncthreads();
+    }
+    #pragma unroll
+    for (int i = 0; i < VEC_SIZE; ++i) {
+        int current_row = row + i;
+        if (current_row < C_rows && col < C_cols) {
+            C[current_row * C_cols + col] = sum[i];
+        }
+    }
+}
 
 // ==============================
 // Kernels: Add inplace
@@ -223,7 +303,7 @@ namespace linalg {
                 DEBUG("Launching sgemm_naive_kernel...");
                 sgemm_naive_kernel<<<gridSize, blockSize>>>(d_A, d_B, d_C, M, K, N, transpose_A, transpose_B);
                 break;
-            case VAEStrategy::TILING: 
+            case VAEStrategy::SHARED_MEMORY_TILING: 
                 DEBUG("Launching sgemm_tiling_kernel...");
                 sgemm_tiling_kernel<<<gridSize, blockSize>>>(d_A, d_B, d_C, M, K, N, transpose_A, transpose_B);
                 break;
@@ -231,11 +311,11 @@ namespace linalg {
                 DEBUG("Launching sgemm_padding_kernel...");
                 sgemm_padding_kernel<<<gridSize, blockSize>>>(d_A, d_B, d_C, M, K, N, transpose_A, transpose_B);
                 break;
-            // valuta se vectorized
+            case VAEStrategy::REGISTER_TILING: 
             default:
-                DEBUG("Launching sgemm_naive_kernel...");
-                sgemm_naive_kernel<<<gridSize, blockSize>>>(d_A, d_B, d_C, M, K, N, transpose_A, transpose_B);
-                break;
+                DEBUG("Launching sgemm_register_tiling_kernel...");
+                sgemm_register_tiling_kernel<<<gridSize, blockSize>>>(d_A, d_B, d_C, M, K, N, transpose_A, transpose_B);
+                break; 
         }
 
         CUDA_CHECK(cudaGetLastError());

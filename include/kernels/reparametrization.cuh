@@ -7,7 +7,8 @@ namespace reparametrization {
 
     void init(curandStatePhilox4_32_10_t* d_states,
               int size, 
-              unsigned long long seed);
+              unsigned long long seed,
+              const VAEStrategy& strategy);
 
     void forward(const float* d_mu,
                  const float* d_logvar,
@@ -15,7 +16,7 @@ namespace reparametrization {
                  float* d_epsilon,
                  curandStatePhilox4_32_10_t* d_states,
                  int size,
-                 const VAEStrategy& strategy = VAEStrategy::NAIVE);
+                 const VAEStrategy& strategy);
 
     void backward(const float* d_dz,
                   const float* d_logvar,
@@ -23,6 +24,6 @@ namespace reparametrization {
                   float* d_dmu,
                   float* d_dlogvar,
                   int size,
-                  const VAEStrategy& strategy = VAEStrategy::NAIVE);
+                  const VAEStrategy& strategy);
 
 }
