@@ -1,3 +1,4 @@
 data/*.bin
-.vscode
+.vscode/
 .DS_Store
+**/.DS_Store
