@@ -73,22 +73,21 @@ __global__ void db_naive_kernel(const float* __restrict__ d_dZ,
 namespace linear {
 
     void forward(const float* d_X,
-                    const float* d_W,
-                    const float* d_b,
-                    float* d_Z,
-                    int batch_size,
-                    int input_dim,
-                    int output_dim,
-                    const VAEStrategy& strategy) {
+                 const float* d_W,
+                 const float* d_b,
+                 float* d_Z,
+                 int batch_size,
+                 int input_dim,
+                 int output_dim,
+                 const VAEStrategy& strategy) {
 
         linalg::sgemm(d_X, d_W, d_Z, batch_size, input_dim, output_dim, strategy);
 
         dim3 blockSize(16, 16);
         switch(strategy) {
             case VAEStrategy::NAIVE:
-            case VAEStrategy::SHARED_MEMORY_TILING:
+            case VAEStrategy::TILING:
             case VAEStrategy::PADDING:
-            case VAEStrategy::REGISTER_TILING:
             case VAEStrategy::REDUCTION:
             case VAEStrategy::UNROLLED_REDUCTION:
             case VAEStrategy::WARP_REDUCTION:
@@ -110,22 +109,30 @@ namespace linear {
     }
 
     void backward(const float* d_X,
-                    const float* d_W,
-                    const float* d_dZ,
-                    float* d_dX,
-                    float* d_dW,
-                    float* d_db,
-                    int batch_size,
-                    int input_dim,
-                    int output_dim,
-                    const VAEStrategy& strategy) {
+                  const float* d_W,
+                  const float* d_dZ,
+                  float* d_dX,
+                  float* d_dW,
+                  float* d_db,
+                  int batch_size,
+                  int input_dim,
+                  int output_dim,
+                  const VAEStrategy& strategy) {
         // d_dX
         if (d_dX != nullptr) {
-            linalg::sgemm(d_dZ, d_W, d_dX, batch_size, output_dim, input_dim, false, true, strategy);
+            float* d_WT = nullptr; // TODO: inserisci in vae_buffer piuttosto che qui
+            CUDA_CHECK(cudaMalloc(&d_WT, output_dim * input_dim * sizeof(float)));
+            linalg::transpose(d_W, d_WT, input_dim, output_dim, strategy);
+            linalg::sgemm(d_dZ, d_WT, d_dX, batch_size, output_dim, input_dim, strategy);
+            CUDA_CHECK(cudaFree(d_WT));
         }
 
         // d_dW
-        linalg::sgemm(d_X, d_dZ, d_dW, input_dim, batch_size, output_dim, true, false, strategy);
+        float* d_XT = nullptr; // TODO: inserisci in vae_buffer piuttosto che qui
+        CUDA_CHECK(cudaMalloc(&d_XT, input_dim * batch_size * sizeof(float)));
+        linalg::transpose(d_X, d_XT, batch_size, input_dim, strategy);
+        linalg::sgemm(d_XT, d_dZ, d_dW, input_dim, batch_size, output_dim strategy);
+        CUDA_CHECK(cudaFree(d_XT));
 
         // d_db
         const int blockSize = 256;

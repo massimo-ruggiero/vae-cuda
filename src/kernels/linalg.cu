@@ -3,9 +3,8 @@
 
 #include <cuda_runtime.h>
 
-
 static constexpr int TILE_DIM = 16;
-static constexpr int VEC_SIZE = 4;
+static constexpr int COARSE_FACTOR = 4;
 
 
 // ==============================
@@ -15,29 +14,15 @@ static constexpr int VEC_SIZE = 4;
 __global__ void sgemm_naive_kernel(const float* __restrict__ A,
                                    const float* __restrict__ B,
                                    float* __restrict__ C,
-                                   int M,
-                                   int K,
-                                   int N,
-                                   bool transpose_A,
-                                   bool transpose_B) {
+                                   int M, int K, int N) {
     int row = blockIdx.y * blockDim.y + threadIdx.y;
     int col = blockIdx.x * blockDim.x + threadIdx.x;
 
     if (row < M && col < N) {
         float sum = 0.0f;
-        int stride_A = transpose_A ? M : K;
-        int stride_B = transpose_B ? K : N;
 
         for (int k = 0; k < K; ++k) {
-            int idx_A = transpose_A ? 
-                        stride_A * k + row : 
-                        stride_A * row + k;
-
-            int idx_B = transpose_B ? 
-                        stride_B * col + k : 
-                        stride_B * k + col;
-
-            sum += A[idx_A] * B[idx_B];
+            sum += A[row * K + k] * B[k * N + col];
         }
         C[row * N + col] = sum;
     }
@@ -46,53 +31,31 @@ __global__ void sgemm_naive_kernel(const float* __restrict__ A,
 __global__ void sgemm_tiling_kernel(const float* __restrict__ A,
                                     const float* __restrict__ B,
                                     float* __restrict__ C,
-                                    int M,
-                                    int K,
-                                    int N,
-                                    bool transpose_A,
-                                    bool transpose_B){
+                                    int M, int K, int N){
     int row = blockIdx.y * blockDim.y + threadIdx.y;
     int col = blockIdx.x * blockDim.x + threadIdx.x;
     
     __shared__ float A_tile[TILE_DIM][TILE_DIM];
     __shared__ float B_tile[TILE_DIM][TILE_DIM];
 
-    int A_rows = transpose_A ? K : M;
-    int A_cols = transpose_A ? M : K;
-    int B_rows = transpose_B ? N : K;
-    int B_cols = transpose_B ? K : N;
-
-    int C_rows = A_rows;
-    int C_cols = B_cols;
-
-    if (row >= C_rows || col >= C_cols) return;
-
-    int numTiles = (A_cols + TILE_DIM - 1) / TILE_DIM;
+    int numTiles = (K + TILE_DIM - 1) / TILE_DIM;
     float sum = 0.0f;
 
     for (int t = 0; t < numTiles; ++t) {
 
         // load tiles into shared memory
-        int kA = t * TILE_DIM + threadIdx.x;
-        if (row < A_rows && kA < A_cols) {
-            int idx_A = transpose_A ?
-                        kA * K + row:
-                        row * K + kA;
-            A_tile[threadIdx.y][threadIdx.x] = A[idx_A];
+        int kA = t * TILE_DIM + threadIdx.x; 
+        if (row < M && kA < K) {
+            A_tile[threadIdx.y][threadIdx.x] = A[row * K + kA];
         } else {
             A_tile[threadIdx.y][threadIdx.x] = 0.0f;
         }
-
         int kB = t * TILE_DIM + threadIdx.y;
-        if (kB < B_rows && col < B_cols) {
-            int idx_B = transpose_B ?
-                        col * N + kB:
-                        kB * N + col;
-            B_tile[threadIdx.y][threadIdx.x] = B[idx_B];
+        if (kB < K && col < N) {
+            B_tile[threadIdx.y][threadIdx.x] = B[kB * N + col];
         } else {
             B_tile[threadIdx.y][threadIdx.x] = 0.0f;
-        }
-                                           
+        }                              
         __syncthreads();
 
         // multiply tiles accumulate result
@@ -101,59 +64,39 @@ __global__ void sgemm_tiling_kernel(const float* __restrict__ A,
         }
         __syncthreads();
     }
-    C[row * C_cols + col] = sum;
+    if (row < M && col < N) {
+        C[row * N + col] = sum;
+    }
 }
 
 __global__ void sgemm_padding_kernel(const float* __restrict__ A,
-                                    const float* __restrict__ B,
-                                    float* __restrict__ C,
-                                    int M,
-                                    int K,
-                                    int N,
-                                    bool transpose_A,
-                                    bool transpose_B){
+                                     const float* __restrict__ B,
+                                     float* __restrict__ C,
+                                     int M, int K, int N){
     int row = blockIdx.y * blockDim.y + threadIdx.y;
     int col = blockIdx.x * blockDim.x + threadIdx.x;
     
     __shared__ float A_tile[TILE_DIM][TILE_DIM + 1];
     __shared__ float B_tile[TILE_DIM][TILE_DIM + 1];
 
-    int A_rows = transpose_A ? K : M;
-    int A_cols = transpose_A ? M : K;
-    int B_rows = transpose_B ? N : K;
-    int B_cols = transpose_B ? K : N;
-
-    int C_rows = A_rows;
-    int C_cols = B_cols;
-
-    if (row >= C_rows || col >= C_cols) return;
-
-    int numTiles = (A_cols + TILE_DIM - 1) / TILE_DIM;
+    int numTiles = (K + TILE_DIM - 1) / TILE_DIM;
     float sum = 0.0f;
 
     for (int t = 0; t < numTiles; ++t) {
 
         // load tiles into shared memory
-        int kA = t * TILE_DIM + threadIdx.x;
-        if (row < A_rows && kA < A_cols) {
-            int idx_A = transpose_A ?
-                        kA * K + row:
-                        row * K + kA;
-            A_tile[threadIdx.y][threadIdx.x] = A[idx_A];
+        int kA = t * TILE_DIM + threadIdx.x; 
+        if (row < M && kA < K) {
+            A_tile[threadIdx.y][threadIdx.x] = A[row * K + kA];
         } else {
             A_tile[threadIdx.y][threadIdx.x] = 0.0f;
         }
-
         int kB = t * TILE_DIM + threadIdx.y;
-        if (kB < B_rows && col < B_cols) {
-            int idx_B = transpose_B ?
-                        col * N + kB:
-                        kB * N + col;
-            B_tile[threadIdx.y][threadIdx.x] = B[idx_B];
+        if (kB < K && col < N) {
+            B_tile[threadIdx.y][threadIdx.x] = B[kB * N + col];
         } else {
             B_tile[threadIdx.y][threadIdx.x] = 0.0f;
-        }
-                                           
+        }                   
         __syncthreads();
 
         // multiply tiles accumulate result
@@ -162,87 +105,139 @@ __global__ void sgemm_padding_kernel(const float* __restrict__ A,
         }
         __syncthreads();
     }
-    C[row * C_cols + col] = sum;
+    if (row < M && col < N) {
+        C[row * N + col] = sum;
+    }
 }
 
-__global__ void sgemm_register_tiling_kernel(const float* __restrict__ A,
-                                             const float* __restrict__ B,
-                                             float* __restrict__ C,
-                                             int M,
-                                             int K,
-                                             int N,
-                                             bool transpose_A,
-                                             bool transpose_B){
-    int row = (blockIdx.y * blockDim.y + threadIdx.y) * VEC_SIZE;
-    int col = blockIdx.x * blockDim.x + threadIdx.x;
-    
-    __shared__ float A_tile[TILE_DIM * VEC_SIZE][TILE_DIM + 1];
-    __shared__ float B_tile[TILE_DIM][TILE_DIM + 1];
+__global__ void sgemm_vec4_kernel(const float* __restrict__ A,
+                                  const float* __restrict__ B,
+                                  float* __restrict__ C,
+                                  int M, int K, int N){
+    int row = blockIdx.y * blockDim.y + threadIdx.y;
+    int col = (blockIdx.x * blockDim.x + threadIdx.x) * COARSE_FACTOR;
 
-    int A_rows = transpose_A ? K : M;
-    int A_cols = transpose_A ? M : K;
-    int B_rows = transpose_B ? N : K;
-    int B_cols = transpose_B ? K : N;
+    __shared__ float A_tile[TILE_DIM][TILE_DIM + 1];
+    __shared__ float B_tile[TILE_DIM][TILE_DIM * COARSE_FACTOR + 1];
 
-    int C_rows = A_rows;
-    int C_cols = B_cols;
+    int numTiles = (K + TILE_DIM - 1) / TILE_DIM;
+    float sum[COARSE_FACTOR] = {0.0f};
 
-    if (row >= C_rows || col >= C_cols) return;
-
-    int numTiles = (A_cols + TILE_DIM - 1) / TILE_DIM;
-    float sum[VEC_SIZE] = {0.0f};
-    
-    #pragma unroll 
     for (int t = 0; t < numTiles; ++t) {
 
         // load tiles into shared memory
-        #pragma unroll 
-        for (int i = 0; i < VEC_SIZE; ++i) {
-            int current_row = row + i;
-            int kA = t * TILE_DIM + threadIdx.x;
-
-            if (current_row < A_rows && kA < A_cols) {
-                int idx_A = transpose_A ?
-                            kA * K + current_row:
-                            current_row * K + kA;
-                A_tile[threadIdx.y * VEC_SIZE + i][threadIdx.x] = A[idx_A];
-            } else {
-                A_tile[threadIdx.y * VEC_SIZE + i][threadIdx.x] = 0.0f;
-            }
+        int kA = t * TILE_DIM + threadIdx.x;
+        if (row < M && kA < K) {
+            A_tile[threadIdx.y][threadIdx.x] = A[row * K + kA];
+        } else {
+            A_tile[threadIdx.y][threadIdx.x] = 0.0f;
         }
 
         int kB = t * TILE_DIM + threadIdx.y;
-        if (kB < B_rows && col < B_cols) {
-            int idx_B = transpose_B ?
-                        col * N + kB:
-                        kB * N + col;
-            B_tile[threadIdx.y][threadIdx.x] = B[idx_B];
+        int shared_col = threadIdx.x * COARSE_FACTOR;
+        if (kB < K && col < N) {
+            float4 b_vec;
+            int idxB = kB * N + col;
+            if (col + 3 < N) {
+                b_vec = *reinterpret_cast<const float4*>(&B[idxB]);
+            } else {
+                b_vec.x = (col + 0 < N) ? B[idxB + 0] : 0.0f;
+                b_vec.y = (col + 1 < N) ? B[idxB + 1] : 0.0f;
+                b_vec.z = (col + 2 < N) ? B[idxB + 2] : 0.0f;
+                b_vec.w = (col + 3 < N) ? B[idxB + 3] : 0.0f;
+            }
+
+            B_tile[threadIdx.y][shared_col + 0] = b_vec.x;
+            B_tile[threadIdx.y][shared_col + 1] = b_vec.y;
+            B_tile[threadIdx.y][shared_col + 2] = b_vec.z;
+            B_tile[threadIdx.y][shared_col + 3] = b_vec.w;
         } else {
-            B_tile[threadIdx.y][threadIdx.x] = 0.0f;
+            B_tile[threadIdx.y][shared_col + 0] = 0.0f;
+            B_tile[threadIdx.y][shared_col + 1] = 0.0f;
+            B_tile[threadIdx.y][shared_col + 2] = 0.0f;
+            B_tile[threadIdx.y][shared_col + 3] = 0.0f;
         }
-                                           
         __syncthreads();
 
         // multiply tiles accumulate result
-        #pragma unroll 
         for (int k = 0; k < TILE_DIM; ++k) {
-            float b_val = B_tile[k][threadIdx.x];
+            float a_val = A_tile[threadIdx.y][k]; 
 
-            #pragma unroll
-            for (int i = 0; i < VEC_SIZE; ++i) {
-                sum[i] += A_tile[threadIdx.y * VEC_SIZE + i][k] * b_val;
+            for (int i = 0; i < COARSE_FACTOR; ++i) {
+                sum[i] += a_val * B_tile[k][threadIdx.x * COARSE_FACTOR + i];
             }
         }
         __syncthreads();
     }
-    #pragma unroll
-    for (int i = 0; i < VEC_SIZE; ++i) {
-        int current_row = row + i;
-        if (current_row < C_rows && col < C_cols) {
-            C[current_row * C_cols + col] = sum[i];
+
+    for (int i = 0; i < COARSE_FACTOR; ++i){
+        int current_col = col + i;
+        if (row < M && current_col < N) {
+            C[row * N + current_col] = sum[i];
         }
     }
 }
+
+
+// ==============================
+// Kernels: Transpose
+// ==============================
+
+__global__ void transpose_naive_kernel(const float* __restrict__ A,
+                                       float* __restrict__ AT,
+                                       int M, int N) {
+    int row = blockIdx.y * blockDim.y + threadIdx.y;
+    int col = blockIdx.x * blockDim.x + threadIdx.x;
+
+    if (row < M && col < N){
+        AT[col * M + row] = A[row * N + col];
+    }
+} 
+
+__global__ void transpose_tiling_kernel(const float* __restrict__ A,
+                                       float* __restrict__ AT,
+                                       int M, int N) {
+    int row = blockIdx.y * blockDim.y + threadIdx.y;
+    int col = blockIdx.x * blockDim.x  + threadIdx.x;
+
+    __shared__ float A_tile[TILE_DIM][TILE_DIM];
+
+    // load tile into shared memory
+    if (row < M && col < N){
+        A_tile[threadIdx.y][threadIdx.x] = A[row * N + col];
+    }
+    __syncthreads();
+
+    int row_t = blockIdx.x * blockDim.x  + threadIdx.y;
+    int col_t = blockIdx.y * blockDim.y + threadIdx.x;
+
+    if (row_t < N && col_t < M) {
+        AT[row_t * M + col_t] = A_tile[threadIdx.x][threadIdx.y];
+    }
+} 
+
+__global__ void transpose_padding_kernel(const float* __restrict__ A,
+                                         float* __restrict__ AT,
+                                         int M, int N) {
+    int row = blockIdx.y * blockDim.y + threadIdx.y;
+    int col = blockIdx.x * blockDim.x  + threadIdx.x;
+
+    __shared__ float A_tile[TILE_DIM][TILE_DIM + 1];
+
+    // load tile into shared memory
+    if (row < M && col < N){
+        A_tile[threadIdx.y][threadIdx.x] = A[row * N + col];
+    }
+    __syncthreads();
+
+    int row_t = blockIdx.x * blockDim.x + threadIdx.y;
+    int col_t = blockIdx.y * blockDim.y + threadIdx.x;
+
+    if (row_t < N && col_t < M) {
+        AT[row_t * M + col_t] = A_tile[threadIdx.x][threadIdx.y];
+    }
+} 
+
 
 // ==============================
 // Kernels: Add inplace
@@ -288,38 +283,68 @@ namespace linalg {
     void sgemm(const float* d_A,
                const float* d_B,
                float* d_C,
-               int M,
-               int K,
-               int N,
-               bool transpose_A,
-               bool transpose_B,
+               int M, int K, int N,
                const VAEStrategy& strategy) {
         dim3 blockSize(TILE_DIM, TILE_DIM);
-        dim3 gridSize((N + blockSize.x - 1) / blockSize.x,
-                      (M + blockSize.y - 1) / blockSize.y);
+        dim3 gridSize;
 
         switch (strategy) {
             case VAEStrategy::NAIVE: 
+                gridSize = dim3((N + blockSize.x - 1) / blockSize.x,
+                                (M + blockSize.y - 1) / blockSize.y);
                 DEBUG("Launching sgemm_naive_kernel...");
-                sgemm_naive_kernel<<<gridSize, blockSize>>>(d_A, d_B, d_C, M, K, N, transpose_A, transpose_B);
+                sgemm_naive_kernel<<<gridSize, blockSize>>>(d_A, d_B, d_C, M, K, N);
                 break;
-            case VAEStrategy::SHARED_MEMORY_TILING: 
+            case VAEStrategy::TILING: 
+                gridSize = dim3((N + blockSize.x - 1) / blockSize.x,
+                                (M + blockSize.y - 1) / blockSize.y);
                 DEBUG("Launching sgemm_tiling_kernel...");
-                sgemm_tiling_kernel<<<gridSize, blockSize>>>(d_A, d_B, d_C, M, K, N, transpose_A, transpose_B);
+                sgemm_tiling_kernel<<<gridSize, blockSize>>>(d_A, d_B, d_C, M, K, N);
                 break;
             case VAEStrategy::PADDING: 
+                gridSize = dim3((N + blockSize.x - 1) / blockSize.x,
+                                (M + blockSize.y - 1) / blockSize.y);
                 DEBUG("Launching sgemm_padding_kernel...");
-                sgemm_padding_kernel<<<gridSize, blockSize>>>(d_A, d_B, d_C, M, K, N, transpose_A, transpose_B);
+                sgemm_padding_kernel<<<gridSize, blockSize>>>(d_A, d_B, d_C, M, K, N);
                 break;
-            case VAEStrategy::REGISTER_TILING: 
+            case VAEStrategy::VECTORIZED: 
             default:
-                DEBUG("Launching sgemm_register_tiling_kernel...");
-                sgemm_register_tiling_kernel<<<gridSize, blockSize>>>(d_A, d_B, d_C, M, K, N, transpose_A, transpose_B);
+                gridSize = dim3((N + (blockSize.x * COARSE_FACTOR) - 1) / (blockSize.x * COARSE_FACTOR),
+                                (M + blockSize.y - 1) / blockSize.y);
+                DEBUG("Launching sgemm_vec4_kernel...");
+                sgemm_vec4_kernel<<<gridSize, blockSize>>>(d_A, d_B, d_C, M, K, N);
                 break; 
         }
 
         CUDA_CHECK(cudaGetLastError());
     } 
+
+    void transpose(const float* d_A,
+                   float* d_AT,
+                   int M, int N,
+                   const VAEStrategy& strategy) {
+        dim3 blockSize(TILE_DIM, TILE_DIM);;
+        dim3 gridSize((N + blockSize.x - 1) / blockSize.x,
+                      (M + blockSize.y - 1) / blockSize.y);
+
+        switch (strategy) {
+            case VAEStrategy::NAIVE: 
+                DEBUG("Launching transpose_naive_kernel...");
+                transpose_naive_kernel<<<gridSize, blockSize>>>(d_A, d_AT, M, N);
+                break;
+            case VAEStrategy::TILING: 
+                DEBUG("Launching transpose_tiling_kernel...");
+                transpose_tiling_kernel<<<gridSize, blockSize>>>(d_A, d_AT, M, N);
+                break;
+            case VAEStrategy::PADDING: 
+            default:
+                DEBUG("Launching transpose_padding_kernel...");
+                transpose_padding_kernel<<<gridSize, blockSize>>>(d_A, d_AT, M, N);
+                break;
+        }
+
+        CUDA_CHECK(cudaGetLastError());
+    }
 
     void add_in_place(float* d_A, 
                       const float* d_B, 

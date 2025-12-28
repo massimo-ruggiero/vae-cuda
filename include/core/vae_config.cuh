@@ -4,9 +4,8 @@
 
 enum class VAEStrategy {
     NAIVE,
-    SHARED_MEMORY_TILING,
+    TILING,
     PADDING,
-    REGISTER_TILING,
     REDUCTION,
     UNROLLED_REDUCTION,
     WARP_REDUCTION,

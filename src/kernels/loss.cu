@@ -476,9 +476,8 @@ namespace loss {
 
         switch (strategy) {
             case VAEStrategy::NAIVE:
-            case VAEStrategy::SHARED_MEMORY_TILING:
+            case VAEStrategy::TILING:
             case VAEStrategy::PADDING:
-            case VAEStrategy::REGISTER_TILING:
                 gridSize_bce = (size_bce + blockSize - 1) / blockSize;
                 DEBUG("Launching bce_forward_naive_kernel...");
                 bce_forward_naive_kernel<<<gridSize_bce, blockSize>>>(d_X, d_Z, d_bce, size_bce, inv_batch);
@@ -508,9 +507,8 @@ namespace loss {
         
         switch (strategy) {
             case VAEStrategy::NAIVE:
-            case VAEStrategy::SHARED_MEMORY_TILING:
+            case VAEStrategy::TILING:
             case VAEStrategy::PADDING:
-            case VAEStrategy::REGISTER_TILING:
                 gridSize_kl = (size_kl + blockSize - 1) / blockSize;
                 DEBUG("Launching kl_forward_naive_kernel...");
                 kl_forward_naive_kernel<<<gridSize_kl, blockSize>>>(d_mu, d_logvar, d_kl, size_kl, inv_batch);
