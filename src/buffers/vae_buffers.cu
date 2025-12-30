@@ -1,6 +1,7 @@
 #include "vae_buffers.cuh"
 #include "utils.cuh" 
 #include <cuda_runtime.h>
+#include <algorithm>
 
 
 // VAEBuffers
@@ -21,24 +22,8 @@ VAEBuffers::VAEBuffers(const VAEConfig& cfg) : config(cfg) {
     d_z.allocate(batch_size * latent_dim);
     d_epsilon.allocate(batch_size * latent_dim);
 
-    size_t num_states = 0;
-    switch(config.strategy) {
-        case VAEStrategy::NAIVE:
-        case VAEStrategy::SHARED_MEMORY_TILING:
-        case VAEStrategy::PADDING:
-        case VAEStrategy::REGISTER_TILING:
-        case VAEStrategy::REDUCTION:
-        case VAEStrategy::UNROLLED_REDUCTION:
-        case VAEStrategy::WARP_REDUCTION:
-            num_states = batch_size * latent_dim;
-            break;
-        case VAEStrategy::VECTORIZED:
-        default:
-            num_states = (batch_size * latent_dim + 3) / 4;
-            break;
-    }
-
-    CUDA_CHECK(cudaMalloc(&d_states, num_states * sizeof(curandStatePhilox4_32_10_t)));
+    const size_t num_states = buf_.num_states();
+    CUDA_CHECK(cudaMalloc(&d_states, num_states * sizeof(curandStatePhilox4_32_10_t))); 
 
     // decoder
     dec1.allocate(batch_size, latent_dim, hidden_dim, true);
@@ -58,25 +43,35 @@ VAEBuffers::~VAEBuffers() {
 
 // VAEGradients
 VAEGradients::VAEGradients(const VAEConfig& cfg) {
-    size_t batch_size = cfg.batch_size;
-    size_t input_dim = cfg.input_dim;
-    size_t hidden_dim = cfg.hidden_dim;
-    size_t latent_dim = cfg.latent_dim;
+    const size_t batch_size = cfg.batch_size;
+    const size_t input_dim = cfg.input_dim;
+    const size_t hidden_dim = cfg.hidden_dim;
+    const size_t latent_dim = cfg.latent_dim;
 
-    // ENCODER
+    // encoder
     enc1.allocate(batch_size, input_dim, hidden_dim, true);
     enc1_dA_tmp.allocate(batch_size * hidden_dim);
     enc2_mu.allocate(batch_size, hidden_dim, latent_dim, false);
     enc2_logvar.allocate(batch_size, hidden_dim, latent_dim, false);
 
-    // LATENT
+    // latent
     d_dz.allocate(batch_size * latent_dim);
 
-    // DECODER
+    // decoder
     dec1.allocate(batch_size, latent_dim, hidden_dim, true);
     dec2.allocate(batch_size, hidden_dim, input_dim, false);
 
-    d_dX_hat.allocate(batch_size * input_dim);
+    const size_t max_XT = std::max({input_dim * batch_size, 
+                                    hidden_dim * batch_size, 
+                                    latent_dim * batch_size});
+
+    const size_t max_WT = std::max({hidden_dim * input_dim, 
+                                    input_dim * hidden_dim, 
+                                    hidden_dim * latent_dim, 
+                                    latent_dim * hidden_dim}); 
+
+    XT.allocate(max_XT);
+    WT.allocate(max_WT);
 }
 
 void VAEGradients::zero_all_grads() {
@@ -88,7 +83,9 @@ void VAEGradients::zero_all_grads() {
     dec2.zero_grads();
 
     d_dz.zero();
-    d_dX_hat.zero();
+
+    XT.zero();
+    WT.zero();
 }
 
 // VAEAdamState

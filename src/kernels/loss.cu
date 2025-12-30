@@ -461,8 +461,8 @@ namespace loss {
                  int batch_size,
                  int input_dim,
                  int output_dim,
-                 float beta,
-                 const VAEStrategy& strategy) {
+                 const VAEStrategy& strategy,
+                 float beta) {
         const int blockSize = 256;
         const int size_bce = batch_size * input_dim;
         const int size_kl = batch_size * output_dim;
@@ -498,7 +498,7 @@ namespace loss {
                 bce_forward_warp_reduction_kernel<<<gridSize_bce, blockSize, blockSize * sizeof(float)>>>(d_X, d_Z, d_bce, size_bce, inv_batch);
                 break;
             case VAEStrategy::VECTORIZED:
-            default
+            default:
                 gridSize_bce = ((size_bce + 3) / 4 + blockSize - 1) / blockSize;
                 DEBUG("Launching bce_forward_vec4_kernel...");
                 bce_forward_vec4_kernel<<<gridSize_bce, blockSize, blockSize * sizeof(float)>>>(d_X, d_Z, d_bce, size_bce, inv_batch);
@@ -584,16 +584,15 @@ namespace loss {
                 float* d_dmu,
                 float* d_dlogvar,
                 int size,
-                float beta,
-                const VAEStrategy& strategy) {
+                const VAEStrategy& strategy,
+                float beta) {
             const int blockSize = 256;
             int gridSize;
 
             switch(strategy) {
                 case VAEStrategy::NAIVE: 
-                case VAEStrategy::SHARED_MEMORY_TILING:
+                case VAEStrategy::TILING:
                 case VAEStrategy::PADDING:
-                case VAEStrategy::REGISTER_TILING:
                 case VAEStrategy::REDUCTION:
                 case VAEStrategy::UNROLLED_REDUCTION:
                 case VAEStrategy::WARP_REDUCTION:

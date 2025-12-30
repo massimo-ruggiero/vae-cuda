@@ -1,5 +1,5 @@
 #pragma once
-#include "vae_config.h"
+#include "vae_config.cuh"
 
 
 namespace activations {
@@ -8,15 +8,15 @@ namespace activations {
 
         void forward(const float* d_Z,
                     float* d_A,
-                    int size,
                     float d_alpha,
+                    int size,
                     const VAEStrategy& strategy);
 
         void backward(const float* d_Z,
                     const float* d_dA,
                     float* d_dZ,
+                    float d_alpha,
                     int size,
-                    float alpha,
                     const VAEStrategy& strategy);
 
     } // namespace leaky_relu
@@ -25,13 +25,13 @@ namespace activations {
 
         void forward(const float* d_Z,
                     float* d_A,
-                    int size
+                    int size,
                     const VAEStrategy& strategy);
 
         void backward(const float* d_A,
                     const float* d_dA,
                     float* d_dZ,
-                    int size
+                    int size,
                     const VAEStrategy& strategy);
 
     } // namespace sigmoid

@@ -117,8 +117,8 @@ __global__ void sgemm_vec4_kernel(const float* __restrict__ A,
     int row = blockIdx.y * blockDim.y + threadIdx.y;
     int col = (blockIdx.x * blockDim.x + threadIdx.x) * COARSE_FACTOR;
 
-    __shared__ float A_tile[TILE_DIM][TILE_DIM + 1];
-    __shared__ float B_tile[TILE_DIM][TILE_DIM * COARSE_FACTOR + 1];
+    __shared__ float A_tile[TILE_DIM][TILE_DIM];
+    __shared__ float B_tile[TILE_DIM][TILE_DIM * COARSE_FACTOR];
 
     int numTiles = (K + TILE_DIM - 1) / TILE_DIM;
     float sum[COARSE_FACTOR] = {0.0f};
@@ -170,10 +170,17 @@ __global__ void sgemm_vec4_kernel(const float* __restrict__ A,
         __syncthreads();
     }
 
-    for (int i = 0; i < COARSE_FACTOR; ++i){
-        int current_col = col + i;
-        if (row < M && current_col < N) {
-            C[row * N + current_col] = sum[i];
+    if (row < M) {
+        if (col + 3 < N) {
+            float4 C_vec = make_float4(sum[0], sum[1], sum[2], sum[3]);
+            *reinterpret_cast<float4*>(&C[row * N + col]) = C_vec;
+        } else {
+            for (int i = 0; i < COARSE_FACTOR; ++i){
+                int current_col = col + i;
+                if (current_col < N) {
+                    C[row * N + current_col] = sum[i];
+                }
+            }
         }
     }
 }

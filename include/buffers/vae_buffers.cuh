@@ -41,8 +41,9 @@ struct VAEGradients {
 
     LinearGrads dec1;
     LinearGrads dec2;
-    GPUBuffer d_dX_hat;
 
+    GPUBuffer XT; // Workspace buffer: transpose of X, used for dW 
+    GPUBuffer WT; // Workspace buffer: transpose of W, used for dX
 
     explicit VAEGradients(const VAEConfig& cfg);
     void zero_all_grads();

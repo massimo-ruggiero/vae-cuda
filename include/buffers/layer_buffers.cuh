@@ -40,6 +40,7 @@ struct LinearGrads {
     GPUBuffer db;
     GPUBuffer dZ;
     GPUBuffer dA;
+
     size_t input_dim = 0;
     size_t output_dim = 0;
     size_t batch_size = 0;

@@ -11,11 +11,11 @@ namespace optimizers {
                 float* d_v,
                 int t,
                 int size,
+                const VAEStrategy& strategy,
                 float lr = 1e-3f, 
                 float beta1 = 0.9f,
                 float beta2 = 0.999f,
-                float epsilon = 1e-8f,
-                const VAEStrategy& strategy);
+                float epsilon = 1e-8f);
 
     }
 

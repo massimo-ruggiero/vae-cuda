@@ -26,6 +26,8 @@ namespace vae {
         linear::backward(buf.dec1.A.ptr,
                          buf.dec2.W.ptr,
                          grads.dec2.dZ.ptr,
+                         grads.XT.ptr,      // (dec1.A = dec2.X)^T
+                         grads.WT.ptr,
                          grads.dec1.dA.ptr,
                          grads.dec2.dW.ptr,
                          grads.dec2.db.ptr,
@@ -42,15 +44,17 @@ namespace vae {
                                         strategy);
 
         linear::backward(buf.d_z.ptr,
-                                buf.dec1.W.ptr,
-                                grads.dec1.dZ.ptr,
-                                grads.d_dz.ptr,
-                                grads.dec1.dW.ptr,
-                                grads.dec1.db.ptr,
-                                batch_size,
-                                latent_dim,
-                                hidden_dim,
-                                strategy);
+                         buf.dec1.W.ptr,
+                         grads.dec1.dZ.ptr,
+                         grads.XT.ptr,      // (d_z = dec1.X)^T
+                         grads.WT.ptr,
+                         grads.d_dz.ptr,
+                         grads.dec1.dW.ptr,
+                         grads.dec1.db.ptr,
+                         batch_size,
+                         latent_dim,
+                         hidden_dim,
+                         strategy);
 
         // reparametrization trick
         reparametrization::backward(grads.d_dz.ptr,
@@ -71,19 +75,23 @@ namespace vae {
 
         // encoder
         linear::backward(buf.enc1.A.ptr,
-                                buf.enc2_mu.W.ptr,
-                                grads.enc2_mu.dZ.ptr,   // dmu
-                                grads.enc1.dA.ptr,
-                                grads.enc2_mu.dW.ptr,
-                                grads.enc2_mu.db.ptr,
-                                batch_size,
-                                hidden_dim,
-                                latent_dim,
-                                strategy);
+                         buf.enc2_mu.W.ptr,
+                         grads.enc2_mu.dZ.ptr,   // dmu
+                         grads.XT.ptr,           // (enc1.A = enc_mu.X)^T
+                         grads.WT.ptr,
+                         grads.enc1.dA.ptr,
+                         grads.enc2_mu.dW.ptr,
+                         grads.enc2_mu.db.ptr,
+                         batch_size,
+                         hidden_dim,
+                         latent_dim,
+                         strategy);
 
         linear::backward(buf.enc1.A.ptr,
                          buf.enc2_logvar.W.ptr,  
                          grads.enc2_logvar.dZ.ptr,   // dlogvar
+                         grads.XT.ptr,               // (enc1.A = enc2_logvar.X)^T
+                         grads.WT.ptr,
                          grads.enc1_dA_tmp.ptr,      
                          grads.enc2_logvar.dW.ptr,
                          grads.enc2_logvar.db.ptr,
@@ -107,6 +115,8 @@ namespace vae {
         linear::backward(buf.d_X.ptr,
                          buf.enc1.W.ptr,
                          grads.enc1.dZ.ptr,
+                         grads.XT.ptr,   
+                         nullptr,
                          nullptr,
                          grads.enc1.dW.ptr,
                          grads.enc1.db.ptr,

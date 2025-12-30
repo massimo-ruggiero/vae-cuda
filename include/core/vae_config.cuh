@@ -22,4 +22,12 @@ struct VAEConfig {
     size_t latent_dim = 200;
     float beta = 1.0f;
     VAEStrategy strategy = VAEStrategy::NAIVE;
+
+    size_t num_states() const {
+        const size_t n = batch_size * latent_dim;
+        if (strategy == VAEStrategy::VECTORIZED) {
+            return (n + 3) / 4;  // one Philox4 state per 4 floats
+        }
+        return n;
+    }
 };

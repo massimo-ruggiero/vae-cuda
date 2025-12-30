@@ -6,7 +6,7 @@
 namespace reparametrization {
 
     void init(curandStatePhilox4_32_10_t* d_states,
-              int size, 
+              int num_states, 
               unsigned long long seed,
               const VAEStrategy& strategy);
 

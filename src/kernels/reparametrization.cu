@@ -141,7 +141,7 @@ __global__ void reparametrization_backward_vec4_kernel(const float* __restrict__
 namespace reparametrization {
 
     void init(curandStatePhilox4_32_10_t* d_states, 
-              int size, 
+              int num_states, 
               unsigned long long seed,
               const VAEStrategy& strategy) {
         const int blockSize = 256;
@@ -149,22 +149,20 @@ namespace reparametrization {
 
         switch(strategy) {
             case VAEStrategy::NAIVE:
-            case VAEStrategy::SHARED_MEMORY_TILING:
+            case VAEStrategy::TILING:
             case VAEStrategy::PADDING:
-            case VAEStrategy::REGISTER_TILING:
             case VAEStrategy::REDUCTION:
             case VAEStrategy::UNROLLED_REDUCTION:
             case VAEStrategy::WARP_REDUCTION:
-                gridSize = (size + blockSize - 1) / blockSize;
+                gridSize = (num_states + blockSize - 1) / blockSize;
                 DEBUG("Initializing cuRAND Philox states...");
-                init_states_kernel<<<gridSize, blockSize>>>(d_states, size, seed);
+                init_states_kernel<<<gridSize, blockSize>>>(d_states, num_states, seed);
                 break;
             case VAEStrategy::VECTORIZED:
             default:
-                int num_states = (size + 3) / 4;
                 gridSize = (num_states + blockSize - 1) / blockSize;
                 DEBUG("Initializing cuRAND Philox states...");
-                init_states_kernel<<<gridSize, blockSize>>>(d_states, size, seed);
+                init_states_kernel<<<gridSize, blockSize>>>(d_states, num_states, seed);
                 break;
         }
         
