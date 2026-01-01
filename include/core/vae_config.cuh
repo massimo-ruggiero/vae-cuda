@@ -10,10 +10,22 @@ enum class VAEStrategy {
     UNROLLED_REDUCTION,
     WARP_REDUCTION,
     VECTORIZED,
-    KERNEL_FUSION,
-    TENSORE_CORES,
-    CUBLAS,
+    KERNEL_FUSION
 };
+
+inline const char* to_string(VAEStrategy s) {
+    switch (s) {
+        case VAEStrategy::NAIVE:              return "Naive";
+        case VAEStrategy::TILING:             return "Tiling";
+        case VAEStrategy::PADDING:            return "Padding";
+        case VAEStrategy::REDUCTION:          return "Reduction";
+        case VAEStrategy::UNROLLED_REDUCTION: return "Unrolled Reduction";
+        case VAEStrategy::WARP_REDUCTION:     return "Warp Reduction";
+        case VAEStrategy::VECTORIZED:         return "Vectorized";
+        case VAEStrategy::KERNEL_FUSION:      return "Kernel Fusion";
+        default:                              return "Unknown";
+    }
+}
 
 struct VAEConfig {
     size_t batch_size = 100;
