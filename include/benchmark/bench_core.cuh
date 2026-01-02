@@ -4,6 +4,8 @@
 #include <cstdio>
 #include <functional>
 #include <cuda_runtime.h>
+#include <curand.h>
+#include <cstddef>
 
 
 struct DeviceSpecs {
