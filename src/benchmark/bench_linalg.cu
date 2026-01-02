@@ -36,10 +36,13 @@ void run_sgemm(Csv& csv, curandGenerator_t gen,
             auto launch = [&](){
                 linalg::sgemm(A.ptr, B.ptr, C.ptr, M, K, N, s);
             };
-            float ms = timer.compute_ms(launch, config);
+            
+            float std_ms = 0.0f;
+            float ms = timer.compute_ms(launch, config, &std_ms);
             csv.row("sgemm", to_string(s), 
                    M, N, K, 
-                   ms, bytes_sgemm(M, K, N), flops_sgemm(M, K, N),
+                   ms, std_ms,
+                   bytes_sgemm(M, K, N), flops_sgemm(M, K, N),
                    specs);
         }
     }

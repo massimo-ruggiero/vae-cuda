@@ -51,8 +51,7 @@ float Timer::compute_ms(const std::function<void()>& launch,
         CUDA_CHECK(cudaEventRecord(start));
         launch();
         CUDA_CHECK(cudaEventRecord(stop));
-
-        CUDA_CHECK(cudaDeviceSynchronize());
+        CUDA_CHECK(cudaEventSynchronize(stop));
 
         float ms = 0.0f;
         CUDA_CHECK(cudaEventElapsedTime(&ms, start, stop));
@@ -95,27 +94,53 @@ Csv::~Csv() {
 }
 
 void Csv::header() {
-    std::fprintf(f, "op,strategy,M,K,N,total,time_ms,bytes_lb,flops\n");
+    std::fprintf(f,
+        "op,strategy,M,K,N,total,time_ms,time_ms_std,bytes_lb,flops,"
+        "bandwidth_gbps,bandwidth_eff_pct,gflops,gflops_eff_pct,ai\n"
+    );
     std::fflush(f);
 }
+
 
 void Csv::row(const char* op,
               const char* strat,
               int M, int K, int N, int total,
               float ms, float std_ms,
               long long bytes, long long flops,
-              const DeviceSpecs& specs) {
-    float bandwidth_gbps = (bytes / 1e9f) / (ms / 1e3f);
-    float bandwidth_eff = (bandwidth_gbps / specs.peak_bandwidth_gbps) * 100.0f;
+              const DeviceSpecs& specs)
+{
+    // avoid div-by-zero
+    const float seconds = (ms > 0.0f) ? (ms / 1e3f) : 0.0f;
 
-    float gflops = (flops / 1e9f) / (ms / 1e3f);
-    float gflops_eff = (gflops / specs.peak_gflops_fp32) * 100.0f;
+    float bandwidth_gbps = 0.0f;
+    float bandwidth_eff  = 0.0f;
+    if (seconds > 0.0f && bytes > 0) {
+        bandwidth_gbps = (bytes / 1e9f) / seconds;
+        if (specs.peak_bandwidth_gbps > 0.0f)
+            bandwidth_eff = (bandwidth_gbps / specs.peak_bandwidth_gbps) * 100.0f;
+    }
 
-    float ai = (flops > 0 && bytes > 0) ? static_cast<float>(flops) / static_cast<float>(bytes) : 0.0f;
+    float gflops = 0.0f;
+    float gflops_eff = 0.0f;
+    if (seconds > 0.0f && flops > 0) {
+        gflops = (flops / 1e9f) / seconds;
+        if (specs.peak_gflops_fp32 > 0.0f)
+            gflops_eff = (gflops / specs.peak_gflops_fp32) * 100.0f;
+    }
 
-    std::fprintf(f, 
-                 "%s,%s,%d,%d,%d,%d,%.6f,%lld,%lld\n",
-                 op,strat,M,K,N,total,ms,bytes,flops);
+    float ai = 0.0f;
+    if (bytes > 0 && flops > 0) {
+        ai = static_cast<float>(flops) / static_cast<float>(bytes);
+    }
+
+    std::fprintf(f,
+        "%s,%s,%d,%d,%d,%d,%.6f,%.6f,%lld,%lld,%.6f,%.2f,%.6f,%.2f,%.6f\n",
+        op, strat, M, K, N, total,
+        ms, std_ms,
+        bytes, flops,
+        bandwidth_gbps, bandwidth_eff,
+        gflops, gflops_eff,
+        ai
+    );
     std::fflush(f);
 }
-
