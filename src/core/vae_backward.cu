@@ -70,8 +70,8 @@ namespace vae {
                         grads.enc2_mu.dZ.ptr,       // dmu
                         grads.enc2_logvar.dZ.ptr,   // dlogvar
                         batch_size * latent_dim,
-                        buf.config.beta,
-                        strategy);
+                        strategy,
+                        buf.config.beta);
 
         // encoder
         linear::backward(buf.enc1.A.ptr,
@@ -100,10 +100,10 @@ namespace vae {
                          latent_dim,
                          strategy);
         
-        add_in_place(grads.enc1.dA.ptr, 
-                     grads.enc1_dA_tmp.ptr, 
-                     batch_size * hidden_dim,
-                     strategy);
+        linalg::add_in_place(grads.enc1.dA.ptr, 
+                             grads.enc1_dA_tmp.ptr, 
+                             batch_size * hidden_dim,
+                             strategy);
 
         activations::leaky_relu::backward(buf.enc1.Z.ptr,
                                         grads.enc1.dA.ptr,
