@@ -22,7 +22,7 @@ VAEBuffers::VAEBuffers(const VAEConfig& cfg) : config(cfg) {
     d_z.allocate(batch_size * latent_dim);
     d_epsilon.allocate(batch_size * latent_dim);
 
-    const size_t num_states = buf_.num_states();
+    const size_t num_states = cfg.num_states();
     CUDA_CHECK(cudaMalloc(&d_states, num_states * sizeof(curandStatePhilox4_32_10_t))); 
 
     // decoder
