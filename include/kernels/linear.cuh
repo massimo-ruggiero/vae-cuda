@@ -15,6 +15,8 @@ namespace linear {
     void backward(const float* d_X,
                     const float* d_W,
                     const float* d_dZ,
+                    float* d_XT,          
+                    float* d_WT,
                     float* d_dX,
                     float* d_dW,
                     float* d_db,
