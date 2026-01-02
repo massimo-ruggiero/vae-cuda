@@ -104,7 +104,7 @@ void Csv::header() {
 
 void Csv::row(const char* op,
               const char* strat,
-              int M, int K, int N, int total,
+              int M, int K, int N,
               float ms, float std_ms,
               long long bytes, long long flops,
               const DeviceSpecs& specs)
@@ -134,8 +134,8 @@ void Csv::row(const char* op,
     }
 
     std::fprintf(f,
-        "%s,%s,%d,%d,%d,%d,%.6f,%.6f,%lld,%lld,%.6f,%.2f,%.6f,%.2f,%.6f\n",
-        op, strat, M, K, N, total,
+        "%s,%s,%d,%d,%d,%.6f,%.6f,%lld,%lld,%.6f,%.2f,%.6f,%.2f,%.6f\n",
+        op, strat, M, K, N,
         ms, std_ms,
         bytes, flops,
         bandwidth_gbps, bandwidth_eff,
