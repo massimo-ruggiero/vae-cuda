@@ -16,6 +16,8 @@ int main() {
     curandCreateGenerator(&gen, CURAND_RNG_PSEUDO_DEFAULT);
     curandSetPseudoRandomGeneratorSeed(gen, 1234ULL);
 
+    Timer timer;
+
     // ====================
     // LINALG BENCHMARK
     // ====================
