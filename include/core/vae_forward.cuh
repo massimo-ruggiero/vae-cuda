@@ -4,12 +4,10 @@
 
 namespace vae {
 
-    namespace naive {
+    void encoder_pass(VAEBuffers& buf);
 
-        void encoder_pass(VAEBuffers& buf);
-        void decoder_pass(VAEBuffers& buf);
-        void forward(VAEBuffers& buf);
-
-    }
+    void decoder_pass(VAEBuffers& buf);
     
+    void forward(VAEBuffers& buf);
+
 }

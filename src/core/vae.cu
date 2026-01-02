@@ -46,8 +46,8 @@ VAE::VAE(const VAEConfig& config)
       d_bce_loss_(nullptr),
       d_kl_loss_(nullptr) {
 
-    const size_t num_states = buf_.num_states();
-    reparametrization::init(buf_.d_states, num_states, 42, strategy);
+    const size_t num_states = config.num_states();
+    reparametrization::init(buf_.d_states, num_states, 42, config.strategy);
 
     initialize_weights();
     ensure_training_resources();
