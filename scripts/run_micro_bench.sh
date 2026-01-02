@@ -16,7 +16,7 @@ INCLUDES=(
 
 # Sources for micro-bench
 SRCS=(
-  src/benchmark/run_micro-bench.cu
+  src/benchmark/main_micro_bench.cu
   src/benchmark/bench_core.cu
   src/benchmark/bench_linalg.cu
   src/buffers/layer_buffers.cu
