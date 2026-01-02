@@ -8,9 +8,9 @@
 
 int main() {
     BenchmarkConfig config = {
-        .warmup_iters = 5;
-        .iters = 50;
-    }
+        .warmup_iters = 5,
+        .iters = 50
+    };
 
     curandGenerator_t gen;
     curandCreateGenerator(&gen, CURAND_RNG_PSEUDO_DEFAULT);
