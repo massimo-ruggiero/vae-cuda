@@ -34,6 +34,7 @@ nvcc -O3 \
   -arch="${ARCH}" \
   "${INCLUDES[@]}" \
   "${SRCS[@]}" \
+  -lcurand \
   -lineinfo \
   -o "${OUT}"
 
