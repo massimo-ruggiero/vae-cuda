@@ -43,7 +43,7 @@ public:
     void header();
     void row(const char* op,
              const char* strat,
-             int M, int K, int N, int total,
+             int M, int K, int N,
              float ms, float std_ms,
              long long bytes, long long flops,
              const DeviceSpecs& specs);
