@@ -22,11 +22,11 @@ SRCS=(
   src/benchmark/bench_linalg.cu
   src/buffers/layer_buffers.cu
   src/buffers/vae_buffers.cu
-  kernels/linalg.cu
-  kernels/activations.cu
-  kernels/loss.cu
-  kernels/optimizers.cu
-  kernels/reparametrization.cu
+  src/kernels/linalg.cu
+  src/kernels/activations.cu
+  src/kernels/loss.cu
+  src/kernels/optimizers.cu
+  src/kernels/reparametrization.cu
 )
 
 echo "[micro-bench] build: nvcc -arch=${ARCH} -> ${OUT}"
