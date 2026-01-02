@@ -6,7 +6,8 @@
 
 void run_sgemm(Csv& csv, curandGenerator_t gen, 
                Timer& timer, 
-               const BenchmarkConfig& config) {
+               const BenchmarkConfig& config,
+               const DeviceSpecs& specs) {
     VAEStrategy strategies[] = {
         VAEStrategy::NAIVE,
         VAEStrategy::TILING,
@@ -38,7 +39,8 @@ void run_sgemm(Csv& csv, curandGenerator_t gen,
             float ms = timer.compute_ms(launch, config);
             csv.row("sgemm", to_string(s), 
                    M, N, K, 
-                   ms, bytes_sgemm(M, K, N), flops_sgemm(M, K, N));
+                   ms, bytes_sgemm(M, K, N), flops_sgemm(M, K, N),
+                   specs);
         }
     }
 }

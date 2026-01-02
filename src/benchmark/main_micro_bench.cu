@@ -15,6 +15,8 @@ int main() {
     curandGenerator_t gen = make_gen(1234ULL);
     Timer timer;
 
+    DeviceSpecs specs = DeviceSpecs::detect();
+
     // ====================
     // LINALG BENCHMARK
     // ====================
@@ -23,7 +25,7 @@ int main() {
         Csv csv("bench_linalg.csv");
         csv.header();
 
-        run_sgemm(csv, gen, timer, config);
+        run_sgemm(csv, gen, timer, config, specs);
     }
 
     curandDestroyGenerator(gen);
