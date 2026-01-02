@@ -1,7 +1,11 @@
 #include "trainer.cuh"
 
 #include <cstdio>
-#include <chrono> 
+#include <iomanip>
+#include <iostream>
+#include <numeric>
+#include <vector>
+#include <cuda_runtime.h>
 
 
 Trainer::Trainer(VAE& vae, 
@@ -24,20 +28,25 @@ Trainer::~Trainer() {
 }
 
 void Trainer::fit(int epochs) {
-    printf("----------------------------------------------------------\n");
-    printf("[Trainer] Starting Training: %d Epochs, Batch Size %zu\n", epochs, config_.batch_size);
-    printf("----------------------------------------------------------\n");
+    std::cout << "\n🚀 Starting training\n";
+    std::cout << "---------------------------------\n";
+    std::cout << "[Trainer] ⚙️ Config: epochs = " << epochs
+              << ", batch_size = " << config_.batch_size << "\n";
 
-    auto total_start = std::chrono::high_resolution_clock::now();
+    cudaEvent_t start, end;
+    cudaEventCreate(&start);
+    cudaEventCreate(&end);
+
+    std::vector<double> epoch_times;
 
     for (int epoch = 0; epoch < epochs; ++epoch) {
         
         loader_.shuffle();
 
-        auto epoch_start = std::chrono::high_resolution_clock::now();
-        
         float total_loss = 0.0f;
         int batches = 0;
+
+        cudaEventRecord(start);
 
         while (loader_.next_batch(h_batch_buffer_, config_.batch_size)) {
             float loss = vae_.train_step(h_batch_buffer_);
@@ -46,18 +55,28 @@ void Trainer::fit(int epochs) {
             batches++;
         }
 
-        auto epoch_end = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double> elapsed = epoch_end - epoch_start;
+        cudaEventRecord(end);
+        cudaEventSynchronize(end);
+
+        float ms = 0.0f;
+        cudaEventElapsedTime(&ms, start, end);
 
         float avg_loss = (batches > 0) ? (total_loss / batches) : 0.0f;
+        double seconds = static_cast<double>(ms) / 1000.0;
+        epoch_times.push_back(seconds);
 
-        printf("Epoch [%d/%d] | Loss: %.4f | Time: %.3f sec\n", 
-                epoch + 1, epochs, avg_loss, elapsed.count());
+        std::cout << "[Trainer] Epoch " << (epoch + 1) << "/" << epochs
+                  << " | avg_loss = " << std::fixed << std::setprecision(4) << avg_loss
+                  << " | time = " << std::setprecision(3) << seconds << " s\n";
     }
 
-    auto total_end = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> total_elapsed = total_end - total_start;
+    cudaEventDestroy(start);
+    cudaEventDestroy(end);
 
-    printf("----------------------------------------------------------\n");
-    printf("[Trainer] Training Completed in %.2f seconds.\n", total_elapsed.count());
+    double summed = std::accumulate(epoch_times.begin(), epoch_times.end(), 0.0);
+
+    std::cout << "---------------------------------\n";
+    std::cout << "[Trainer] ✅ Training completed in "
+              << std::fixed << std::setprecision(2) << summed
+              << " seconds (sum of epochs).\n";
 }

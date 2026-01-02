@@ -3,9 +3,7 @@ set -euo pipefail
 
 # Default: Colab T4
 ARCH="${ARCH:-sm_75}"
-OUT="${OUT:-micro_bench}"
-
-RESULTS_DIR="${RESULTS_DIR:-results/micro_bench/csv}"
+OUT="${OUT:-main}"
 
 # Include paths
 INCLUDES=(
@@ -19,23 +17,25 @@ INCLUDES=(
 
 # Sources for micro-bench
 SRCS=(
-  src/benchmark/main_micro_bench.cu
-  src/benchmark/bench_core.cu
-  src/benchmark/bench_linalg.cu
-  src/benchmark/bench_activations.cu
-  src/benchmark/bench_loss.cu
-  src/benchmark/bench_reparam.cu
-  src/benchmark/bench_optimizers.cu
+  src/main.cu
+  src/core/vae_forward.cu
+  src/core/vae_backward.cu
+  src/core/vae.cu
+  src/core/trainer.cu
   src/buffers/layer_buffers.cu
   src/buffers/vae_buffers.cu
+  src/optmizers/adam.cu
   src/kernels/linalg.cu
   src/kernels/activations.cu
   src/kernels/loss.cu
   src/kernels/optimizers.cu
   src/kernels/reparametrization.cu
+  src/kernels/fused.cu
+  src/kernels/linear.cu
+  src/utils/mnist_loader.cpp
 )
 
-echo "[micro-bench] build: nvcc -arch=${ARCH} -> ${OUT}"
+echo "[main] build: nvcc -arch=${ARCH} -> ${OUT}"
 
 nvcc -arch="${ARCH}" \
      "${INCLUDES[@]}" \
@@ -45,4 +45,4 @@ nvcc -arch="${ARCH}" \
      -o "${OUT}"
 
 echo "[micro-bench] run: ./${OUT}"
-./"${OUT}" --outdir "${RESULTS_DIR}"
+./"${OUT}" 

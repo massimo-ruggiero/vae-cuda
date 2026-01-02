@@ -2,7 +2,7 @@
 
 #include "vae.cuh"
 #include "adam.cuh"
-#include "mnist_loader.h"
+#include "mnist_loader.hpp"
 
 class Trainer {
 private:

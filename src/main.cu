@@ -4,17 +4,8 @@
 #include "vae_config.cuh"
 #include "vae.cuh"
 #include "adam.cuh"
-#include "mnist_loader.h" 
-#include "trainer.cuh"      
-
-
-void save_binary_image(const char* filename, float* data, int size) {
-    FILE* f = fopen(filename, "wb");
-    if (!f) { printf("Errore apertura %s\n", filename); return; }
-    fwrite(data, sizeof(float), size, f);
-    fclose(f);
-    printf("[Main] Salvata immagine di test in: %s\n", filename);
-}
+#include "mnist_loader.hpp"
+#include "trainer.cuh"
 
 
 int main() {
@@ -43,11 +34,9 @@ int main() {
 
     // const char* save_path = "vae_weights.bin";
     // vae.save_weights(save_path);
-    // printf("[Main] Pesi salvati in: %s\n", save_path);
+    // std::cout << "[Main] ✅ Saved weights to: " << save_path << "\n";
 
-    // TEST
-
-    printf("[Test] Generazione immagine di prova...\n");
+    std::cout << "[Main] ⚙️ Generating test reconstruction...\n";
 
     float* h_batch_in  = new float[config.batch_size * 784];
     float* h_batch_out = new float[config.batch_size * 784];
@@ -57,17 +46,24 @@ int main() {
 
     vae.reconstruct(h_batch_in, h_batch_out);
 
-    FILE* f1 = fopen("original.raw", "wb");
-    fwrite(h_batch_in, sizeof(float), 784, f1); 
-    fclose(f1);
+    FILE* f1 = std::fopen("original.raw", "wb");
+    if (f1) {
+        std::fwrite(h_batch_in, sizeof(float), 784, f1);
+        std::fclose(f1);
+    } else {
+        std::cerr << "[Main] ERROR: cannot open original.raw for writing\n";
+    }
 
-    FILE* f2 = fopen("reconstructed.raw", "wb");
-    fwrite(h_batch_out, sizeof(float), 784, f2); 
-    fclose(f2);
+    FILE* f2 = std::fopen("reconstructed.raw", "wb");
+    if (f2) {
+        std::fwrite(h_batch_out, sizeof(float), 784, f2);
+        std::fclose(f2);
+    } else {
+        std::cerr << "[Main] ERROR: cannot open reconstructed.raw for writing\n";
+    }
 
-    printf("[Test] Salvati 'original.raw' e 'reconstructed.raw' (solo 1 img).\n");
+    std::cout << "[Main] ✅ Saved 'original.raw' and 'reconstructed.raw' (first image).\n";
 
-    // Pulizia
     delete[] h_batch_in;
     delete[] h_batch_out;
 
