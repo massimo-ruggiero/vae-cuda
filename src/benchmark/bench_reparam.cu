@@ -3,6 +3,7 @@
 #include "bench_sizes.hpp"
 #include "layer_buffers.cuh"
 
+#include <iostream>
 
 void run_reparam_forward(Csv& csv, curandGenerator_t gen, 
                          Timer& timer, 
@@ -17,6 +18,9 @@ void run_reparam_forward(Csv& csv, curandGenerator_t gen,
         for (auto t : VEC_SIZES) {
             int size = t.size;
             int num_states = (s == VAEStrategy::VECTORIZED) ? ((size + 3) / 4) : size;
+
+            std::cout << "[Reparam] Forward benchmark: strategy = " << to_string(s)
+                      << " size = " << size << std::endl;
 
             GPUBuffer mu, logvar, z, epsilon;
             mu.allocate(size);
@@ -62,6 +66,9 @@ void run_reparam_backward(Csv& csv, curandGenerator_t gen,
         for (auto t : VEC_SIZES) {
             int size = t.size;
             int num_states = (s == VAEStrategy::VECTORIZED) ? ((size + 3) / 4) : size;
+
+            std::cout << "[Reparam] Backward benchmark: strategy = " << to_string(s)
+                      << " size = " << size << std::endl;
 
             GPUBuffer mu, logvar, z, epsilon, dz, dmu, dlogvar;
             mu.allocate(size);

@@ -3,6 +3,7 @@
 #include "bench_sizes.hpp"
 #include "layer_buffers.cuh"
 
+#include <iostream>
 
 void run_adam_step(Csv& csv, curandGenerator_t gen, 
                    Timer& timer, 
@@ -16,6 +17,9 @@ void run_adam_step(Csv& csv, curandGenerator_t gen,
     for (VAEStrategy s : strategies) {
         for (auto t : VEC_SIZES) {
             int size = t.size;
+
+            std::cout << "[Optimizers] Adam step benchmark: strategy = " << to_string(s)
+                      << " size = " << size << std::endl;
 
             GPUBuffer g, theta, m, v;
             g.allocate(size);

@@ -3,6 +3,8 @@
 #include "bench_sizes.hpp"
 #include "layer_buffers.cuh"
 
+#include <iostream>
+
 
 void run_loss_forward(Csv& csv, curandGenerator_t gen, 
                       Timer& timer, 
@@ -24,6 +26,11 @@ void run_loss_forward(Csv& csv, curandGenerator_t gen,
 
             int size_bce = batch * input_dim;
             int size_kl = batch * latent_dim;
+
+            std::cout << "[Loss] Starting forward benchmark: strategy = " << to_string(s)
+                      << " batch = " << batch
+                      << " input_dim = " << input_dim
+                      << " latent_dim = " << latent_dim << std::endl;
 
             GPUBuffer X, Z, mu, logvar, bce, kl;
             X.allocate(size_bce);
@@ -71,6 +78,9 @@ void run_bce_backward(Csv& csv, curandGenerator_t gen,
         for (auto t : VEC_SIZES) {
             int size = t.size;
 
+            std::cout << "[Loss] BCE backward benchmark: strategy = " << to_string(s)
+                      << " size = " << size << std::endl;
+
             GPUBuffer X, X_hat, dA;
             X.allocate(size);
             X_hat.allocate(size);
@@ -106,6 +116,9 @@ void run_kl_backward(Csv& csv, curandGenerator_t gen,
     for (VAEStrategy s : strategies) {
         for (auto t : VEC_SIZES) {
             int size = t.size;
+
+            std::cout << "[Loss] KL backward benchmark: strategy = " << to_string(s)
+                      << " size = " << size << std::endl;
 
             GPUBuffer mu, logvar, dmu, dlogvar;
             mu.allocate(size);

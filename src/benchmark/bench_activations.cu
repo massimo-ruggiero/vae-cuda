@@ -3,6 +3,7 @@
 #include "bench_sizes.hpp"
 #include "layer_buffers.cuh"
 
+#include <iostream>
 
 void run_leaky_relu_forward(Csv& csv, curandGenerator_t gen, 
                             Timer& timer, 
@@ -16,6 +17,9 @@ void run_leaky_relu_forward(Csv& csv, curandGenerator_t gen,
     for (VAEStrategy s : strategies) {
         for (auto t : VEC_SIZES) {
             int size = t.size;
+
+            std::cout << "[Activations] LeakyReLU forward: strategy = " << to_string(s)
+                      << " size = " << size << std::endl;
 
             GPUBuffer Z, A;
             Z.allocate(size);
@@ -50,6 +54,9 @@ void run_leaky_relu_backward(Csv& csv, curandGenerator_t gen,
     for (VAEStrategy s : strategies) {
         for (auto t : VEC_SIZES) {
             int size = t.size;
+
+            std::cout << "[Activations] LeakyReLU backward: strategy = " << to_string(s)
+                      << " size = " << size << std::endl;
 
             GPUBuffer Z, dA, dZ;
             Z.allocate(size);
@@ -87,6 +94,9 @@ void run_sigmoid_forward(Csv& csv, curandGenerator_t gen,
         for (auto t : VEC_SIZES) {
             int size = t.size;
 
+            std::cout << "[Activations] Sigmoid forward: strategy = " << to_string(s)
+                      << " size = " << size << std::endl;
+
             GPUBuffer Z, A;
             Z.allocate(size);
             A.allocate(size);
@@ -120,6 +130,9 @@ void run_sigmoid_backward(Csv& csv, curandGenerator_t gen,
     for (VAEStrategy s : strategies) {
         for (auto t : VEC_SIZES) {
             int size = t.size;
+
+            std::cout << "[Activations] Sigmoid backward: strategy = " << to_string(s)
+                      << " size = " << size << std::endl;
 
             GPUBuffer A, dA, dZ;
             A.allocate(size);

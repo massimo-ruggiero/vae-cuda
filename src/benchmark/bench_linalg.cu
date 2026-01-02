@@ -3,6 +3,7 @@
 #include "layer_buffers.cuh"
 #include "bench_sizes.hpp"
 
+#include <iostream>
 
 void run_sgemm(Csv& csv, curandGenerator_t gen, 
                Timer& timer, 
@@ -20,6 +21,11 @@ void run_sgemm(Csv& csv, curandGenerator_t gen,
             int M = t.M;
             int K = t.K;
             int N = t.N;
+
+            std::cout << "[Linalg] SGEMM benchmark: strategy = " << to_string(s)
+                      << " M = " << M
+                      << " K = " << K
+                      << " N = " << N << std::endl;
 
             size_t size_A = (size_t)M * (size_t)K;
             size_t size_B = (size_t)K * (size_t)N;
@@ -63,6 +69,10 @@ void run_transpose(Csv& csv, curandGenerator_t gen,
             int M = t.M;
             int N = t.N;
 
+            std::cout << "[Linalg] Transpose benchmark: strategy = " << to_string(s)
+                      << " M = " << M
+                      << " N = " << N << std::endl;
+
             size_t size = (size_t)M * (size_t)N;
             GPUBuffer A, AT;
             A.allocate(size);
@@ -97,6 +107,9 @@ void run_add_in_place(Csv& csv, curandGenerator_t gen,
     for (VAEStrategy s : strategies) {
         for (auto t : VEC_SIZES) {
             int size = t.size;
+
+            std::cout << "[Linalg] Add in place benchmark: strategy = " << to_string(s)
+                      << " size = " << size << std::endl;
 
             GPUBuffer A, B;
             A.allocate(size);

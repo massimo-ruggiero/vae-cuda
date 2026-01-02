@@ -11,7 +11,7 @@ struct LossSizes { int batch, input_dim, latent_dim; };
 static constexpr SgemmSizes SGEMM_SIZES[] = {
     {128, 256, 64},
     {128, 784, 512},
-    {512, 1024, 512},
+    {1024, 2048, 1024},
 };
 static constexpr TransposeSizes TRANSPOSE_SIZES[] = {
     {256, 128},
