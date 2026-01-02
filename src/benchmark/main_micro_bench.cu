@@ -21,11 +21,63 @@ int main() {
     // LINALG BENCHMARK
     // ====================
     {
-        std::cout << "\n[Benchmark] Linalg (SGEMM)...\n";
+        std::cout << "\n[Benchmark] Linalg...\n";
         Csv csv("bench_linalg.csv");
         csv.header();
 
         run_sgemm(csv, gen, timer, config, specs);
+        run_transpose(csv, gen, timer, config, specs);
+        run_add_in_place(csv, gen, timer, config, specs);
+    }
+
+    // ====================
+    // ACTIVATIONS BENCHMARK
+    // ====================
+    {
+        std::cout << "\n[Benchmark] Activations...\n";
+        Csv csv("bench_activations.csv");
+        csv.header();
+
+        run_leaky_relu_forward(csv, gen, timer, config, specs);
+        run_leaky_relu_backward(csv, gen, timer, config, specs);
+        run_sigmoid_forward(csv, gen, timer, config, specs);
+        run_sigmoid_backward(csv, gen, timer, config, specs);
+    }
+
+    // ====================
+    // LOSS BENCHMARK
+    // ====================
+    {
+        std::cout << "\n[Benchmark] Loss...\n";
+        Csv csv("bench_loss.csv");
+        csv.header();
+
+        run_loss_forward(csv, gen, timer, config, specs);
+        run_bce_backward(csv, gen, timer, config, specs);
+        run_kl_backward(csv, gen, timer, config, specs);
+    }
+
+    // ====================
+    // REPARAMETRIZATION BENCHMARK
+    // ====================
+    {
+        std::cout << "\n[Benchmark] Reparametrization...\n";
+        Csv csv("bench_reparam.csv");
+        csv.header();
+
+        run_reparam_forward(csv, gen, timer, config, specs);
+        run_reparam_backward(csv, gen, timer, config, specs);
+    }
+
+    // ====================
+    // OPTIMIZER BENCHMARK
+    // ====================
+    {
+        std::cout << "\n[Benchmark] Optimizers...\n";
+        Csv csv("bench_optimizers.csv");
+        csv.header();
+
+        run_adam_step(csv, gen, timer, config, specs);
     }
 
     curandDestroyGenerator(gen);

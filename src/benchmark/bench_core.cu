@@ -95,7 +95,7 @@ Csv::~Csv() {
 
 void Csv::header() {
     std::fprintf(f,
-        "op,strategy,M,K,N,total,time_ms,time_ms_std,bytes_lb,flops,"
+        "op,strategy,M,K,N,time_ms,time_ms_std,bytes_lb,flops,"
         "bandwidth_gbps,bandwidth_eff_pct,gflops,gflops_eff_pct,ai\n"
     );
     std::fflush(f);

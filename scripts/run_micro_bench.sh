@@ -20,6 +20,10 @@ SRCS=(
   src/benchmark/main_micro_bench.cu
   src/benchmark/bench_core.cu
   src/benchmark/bench_linalg.cu
+  src/benchmark/bench_activations.cu
+  src/benchmark/bench_loss.cu
+  src/benchmark/bench_reparam.cu
+  src/benchmark/bench_optimizers.cu
   src/buffers/layer_buffers.cu
   src/buffers/vae_buffers.cu
   src/kernels/linalg.cu
