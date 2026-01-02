@@ -12,10 +12,7 @@ int main() {
         .iters = 50
     };
 
-    curandGenerator_t gen;
-    curandCreateGenerator(&gen, CURAND_RNG_PSEUDO_DEFAULT);
-    curandSetPseudoRandomGeneratorSeed(gen, 1234ULL);
-
+    curandGenerator_t gen = make_gen(1234ULL);
     Timer timer;
 
     // ====================

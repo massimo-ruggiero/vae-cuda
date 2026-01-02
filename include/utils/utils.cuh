@@ -17,5 +17,5 @@
         fprintf(stderr, "CUDA error %s at %s:%d\n",               \
                 cudaGetErrorString(err_), __FILE__, __LINE__);    \
         exit(EXIT_FAILURE);                                       \
-    }                                                             \
+    }                                                             
 } while(0)

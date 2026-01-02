@@ -7,6 +7,8 @@
 #include <iostream>
 #include <vector>
 
+#include <curand.h>
+
 float DeviceSpecs::ridge_point() const {
     return peak_gflops_fp32 / peak_bandwidth_gbps;
 }
