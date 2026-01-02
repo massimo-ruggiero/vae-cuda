@@ -11,10 +11,4 @@
 #endif
 
 
-#define CUDA_CHECK(call) do { \
-    cudaError_t _e = (call); \
-    if (_e != cudaSuccess) { \
-        std::fprintf(stderr, "CUDA error %s at %s:%d\n", cudaGetErrorString(_e), __FILE__, __LINE__); \
-        std::exit(1); \
-    } \
-} while(0)
+#define CUDA_CHECK(call) do { cudaError_t _e=(call); if(_e!=cudaSuccess){ std::fprintf(stderr,"CUDA error %s at %s:%d\n", cudaGetErrorString(_e), __FILE__, __LINE__); std::exit(1);} } while(0)

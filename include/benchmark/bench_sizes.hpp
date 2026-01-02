@@ -3,9 +3,9 @@
 #include <vector>
 #include <string>
 
-struct SgemmSizes {int M, K, N; }
-struct TransposeSizes {int M, N; }
-struct VecSizes {int size; }
+struct SgemmSizes { int M, K, N; };
+struct TransposeSizes { int M, N; };
+struct VecSizes { int size; };
 
 static constexpr SgemmSizes SGEMM_SIZES[] = {
     {128, 256, 64},
