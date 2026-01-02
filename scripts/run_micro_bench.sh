@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Default: Colab T4
+ARCH="${ARCH:-sm_75}"
+OUT="${OUT:-micro_bench}"
+
+# Include paths
+INCLUDES=(
+  -Iinclude
+  -Iinclude/benchmark
+  -Iinclude/buffers
+  -Iinclude/core
+  -Iinclude/utils
+)
+
+# Sources for micro-bench
+SRCS=(
+  src/benchmark/run_micro-bench.cu
+  src/benchmark/bench_core.cu
+  src/benchmark/bench_linalg.cu
+  src/buffers/layer_buffers.cu
+  src/buffers/vae_buffers.cu
+  kernels/linalg.cu
+  kernels/activations.cu
+  kernels/loss.cu
+  kernels/optimizers.cu
+  kernels/reparametrization.cu
+)
+
+echo "[micro-bench] build: nvcc -arch=${ARCH} -> ${OUT}"
+
+nvcc -O3 \
+  -arch="${ARCH}" \
+  "${INCLUDES[@]}" \
+  "${SRCS[@]}" \
+  -lineinfo \
+  -o "${OUT}"
+
+echo "[micro-bench] run: ./${OUT}"
+./"${OUT}"

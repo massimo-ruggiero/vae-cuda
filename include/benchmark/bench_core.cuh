@@ -70,7 +70,7 @@ inline long long bytes_sgemm(int M, int K, int N) {
          (long long)M * N * sizeof(float);
 }
 
-inline long long flops_matmul(int M, int K, int N) {
+inline long long flops_sgemml(int M, int K, int N) {
   // 2*M*N*K (mul + add per element)
   return 2LL * (long long)M * (long long)N * (long long)K;
 }
