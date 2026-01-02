@@ -182,9 +182,8 @@ namespace reparametrization {
 
         switch(strategy) {
             case VAEStrategy::NAIVE:
-            case VAEStrategy::SHARED_MEMORY_TILING:
+            case VAEStrategy::TILING:
             case VAEStrategy::PADDING:
-            case VAEStrategy::REGISTER_TILING:
             case VAEStrategy::REDUCTION:
             case VAEStrategy::UNROLLED_REDUCTION:
             case VAEStrategy::WARP_REDUCTION:
@@ -215,9 +214,8 @@ namespace reparametrization {
 
         switch(strategy) {
             case VAEStrategy::NAIVE:
-            case VAEStrategy::SHARED_MEMORY_TILING:
+            case VAEStrategy::TILING:
             case VAEStrategy::PADDING:
-            case VAEStrategy::REGISTER_TILING:
             case VAEStrategy::REDUCTION:
             case VAEStrategy::UNROLLED_REDUCTION:
             case VAEStrategy::WARP_REDUCTION:
