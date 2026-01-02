@@ -12,6 +12,7 @@ INCLUDES=(
   -Iinclude/buffers
   -Iinclude/kernels
   -Iinclude/core
+  -Iinclude/optimizers
   -Iinclude/utils
 )
 

@@ -1,4 +1,4 @@
-#include "adam.cuh"
+#include "optimizers/adam.cuh"
 #include "optimizers.cuh"
 #include <cstdio>
 
