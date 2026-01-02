@@ -10,6 +10,7 @@ INCLUDES=(
   -Iinclude
   -Iinclude/benchmark
   -Iinclude/buffers
+  -Iinclude/kernels
   -Iinclude/core
   -Iinclude/utils
 )
