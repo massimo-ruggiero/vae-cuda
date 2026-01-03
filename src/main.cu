@@ -1,5 +1,6 @@
 #include <cstdio>
 #include <iostream>
+#include <filesystem>
 
 #include "vae_config.cuh"
 #include "vae.cuh"
