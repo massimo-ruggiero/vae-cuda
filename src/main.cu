@@ -22,13 +22,14 @@ static std::string get_outdir(int argc, char** argv) {
 }
 
 static std::string join_path(const std::string& dir, 
-                             const std::string& file, 
-                             int n) {
+                             const std::string& file) {
     namespace fs = std::filesystem;
     return (fs::path(dir) / fs::path(file)).string();
 }
 
-static bool write_raw(const std::string& path, const float* data) {
+static bool write_raw(const std::string& path, 
+                      const float* data,
+                      int n) {
     FILE* f = std::fopen(path.c_str(), "wb");
     if (!f) return false;
     std::fwrite(data, sizeof(float), n, f);
@@ -109,10 +110,6 @@ int main(int argc, char** argv) {
         Adam optimizer(config, learning_rate);
         Trainer trainer(vae, optimizer, loader, config);
         trainer.fit(epochs);
-
-        // const char* save_path = "vae_weights.bin";
-        // vae.save_weights(save_path);
-        // std::cout << "[Main] ✅ Saved weights to: " << save_path << "\n";
 
         std::cout << "[Main] ⚙️ Generating test reconstruction...\n";
 
