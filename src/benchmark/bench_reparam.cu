@@ -43,7 +43,7 @@ void run_reparam_forward(Csv& csv, curandGenerator_t gen,
             float std_ms = 0.0f;
             float ms = timer.compute_ms(launch, config, &std_ms);
             csv.row("reparam_forward", to_string(s), 
-                    size, 1, 1, 
+                    size, -1, -1, 
                     ms, std_ms,
                     bytes_reparametrization_forward(size), flops_reparametrization_forward(size),
                     specs);
@@ -96,7 +96,7 @@ void run_reparam_backward(Csv& csv, curandGenerator_t gen,
             float std_ms = 0.0f;
             float ms = timer.compute_ms(launch, config, &std_ms);
             csv.row("reparam_backward", to_string(s), 
-                    size, 1, 1, 
+                    size, -1, -1, 
                     ms, std_ms,
                     bytes_reparametrization_backward(size), flops_reparametrization_backward(size),
                     specs);

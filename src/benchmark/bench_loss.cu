@@ -96,7 +96,7 @@ void run_bce_backward(Csv& csv, curandGenerator_t gen,
             float std_ms = 0.0f;
             float ms = timer.compute_ms(launch, config, &std_ms);
             csv.row("bce_backward", to_string(s), 
-                    size, 1, 1, 
+                    size, -1, -1, 
                     ms, std_ms,
                     bytes_bce_backward(size), flops_bce_backward(size),
                     specs);
@@ -136,7 +136,7 @@ void run_kl_backward(Csv& csv, curandGenerator_t gen,
             float std_ms = 0.0f;
             float ms = timer.compute_ms(launch, config, &std_ms);
             csv.row("kl_backward", to_string(s), 
-                    size, 1, 1, 
+                    size, -1, -1, 
                     ms, std_ms,
                     bytes_kl_backward(size), flops_kl_backward(size),
                     specs);

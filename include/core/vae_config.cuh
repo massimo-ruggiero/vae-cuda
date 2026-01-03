@@ -16,15 +16,15 @@ enum class VAEStrategy {
 
 inline const char* to_string(VAEStrategy s) {
     switch (s) {
-        case VAEStrategy::NAIVE:              return "Naive";
-        case VAEStrategy::TILING:             return "Tiling";
-        case VAEStrategy::PADDING:            return "Padding";
-        case VAEStrategy::REDUCTION:          return "Reduction";
-        case VAEStrategy::UNROLLED_REDUCTION: return "Unrolled Reduction";
-        case VAEStrategy::WARP_REDUCTION:     return "Warp Reduction";
-        case VAEStrategy::VECTORIZED:         return "Vectorized";
-        case VAEStrategy::OPTIMIZED:          return "Optimized";
-        case VAEStrategy::KERNEL_FUSION:      return "Kernel Fusion";
+        case VAEStrategy::NAIVE:              return "NAIVE";
+        case VAEStrategy::TILING:             return "TILING";
+        case VAEStrategy::PADDING:            return "PADDING";
+        case VAEStrategy::REDUCTION:          return "REDUCTION";
+        case VAEStrategy::UNROLLED_REDUCTION: return "UNROLLED_REDUCTION";
+        case VAEStrategy::WARP_REDUCTION:     return "WARP_REDUCTION";
+        case VAEStrategy::VECTORIZED:         return "VECTORIZED";
+        case VAEStrategy::OPTIMIZED:          return "OPTIMIZED";
+        case VAEStrategy::KERNEL_FUSION:      return "KERNEL_FUSION";
         default:                              return "Unknown";
     }
 }

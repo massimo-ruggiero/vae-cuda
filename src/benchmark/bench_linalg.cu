@@ -87,7 +87,7 @@ void run_transpose(Csv& csv, curandGenerator_t gen,
             float std_ms = 0.0f;
             float ms = timer.compute_ms(launch, config, &std_ms);
             csv.row("transpose", to_string(s), 
-                    M, N, 1, 
+                    M, N, -1, 
                     ms, std_ms,
                     bytes_transpose(M, N), flops_transpose(M, N),
                     specs);
@@ -125,7 +125,7 @@ void run_add_in_place(Csv& csv, curandGenerator_t gen,
             float std_ms = 0.0f;
             float ms = timer.compute_ms(launch, config, &std_ms);
             csv.row("add_in_place", to_string(s), 
-                    size, 1, 1, 
+                    size, -1, -1, 
                     ms, std_ms,
                     bytes_add_inplace(size), flops_add_inplace(size),
                     specs);

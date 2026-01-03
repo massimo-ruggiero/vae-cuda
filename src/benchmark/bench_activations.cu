@@ -34,7 +34,7 @@ void run_leaky_relu_forward(Csv& csv, curandGenerator_t gen,
             float std_ms = 0.0f;
             float ms = timer.compute_ms(launch, config, &std_ms);
             csv.row("leaky_relu_fwd", to_string(s), 
-                    size, 1, 1, 
+                    size, -1, -1, 
                     ms, std_ms,
                     bytes_leaky_relu(size), flops_leaky_relu(size),
                     specs);
@@ -73,7 +73,7 @@ void run_leaky_relu_backward(Csv& csv, curandGenerator_t gen,
             float std_ms = 0.0f;
             float ms = timer.compute_ms(launch, config, &std_ms);
             csv.row("leaky_relu_bwd", to_string(s), 
-                    size, 1, 1, 
+                    size, -1, -1, 
                     ms, std_ms,
                     bytes_leaky_relu(size), flops_leaky_relu(size),
                     specs);
@@ -110,7 +110,7 @@ void run_sigmoid_forward(Csv& csv, curandGenerator_t gen,
             float std_ms = 0.0f;
             float ms = timer.compute_ms(launch, config, &std_ms);
             csv.row("sigmoid_fwd", to_string(s), 
-                    size, 1, 1, 
+                    size, -1, -1, 
                     ms, std_ms,
                     bytes_sigmoid(size), flops_sigmoid(size),
                     specs);
@@ -149,7 +149,7 @@ void run_sigmoid_backward(Csv& csv, curandGenerator_t gen,
             float std_ms = 0.0f;
             float ms = timer.compute_ms(launch, config, &std_ms);
             csv.row("sigmoid_bwd", to_string(s), 
-                    size, 1, 1, 
+                    size, -1, -1, 
                     ms, std_ms,
                     bytes_sigmoid(size), flops_sigmoid(size),
                     specs);

@@ -39,7 +39,7 @@ void run_adam_step(Csv& csv, curandGenerator_t gen,
             float std_ms = 0.0f;
             float ms = timer.compute_ms(launch, config, &std_ms);
             csv.row("adam_step", to_string(s), 
-                    size, 1, 1, 
+                    size, -1, -1, 
                     ms, std_ms,
                     bytes_adam_step(size), flops_adam_step(size),
                     specs);

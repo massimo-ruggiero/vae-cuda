@@ -90,9 +90,11 @@ int main(int argc, char** argv) {
     VAE vae(config);
     Adam optimizer(config, learning_rate);
     Trainer trainer(vae, optimizer, loader, config);
+    std::cout << "[Sainity Check] ⚙️ Training model...\n";
     trainer.fit(epochs);
+    std::cout << "[Sainity Check] ✅ Model trained successfully.\n";
 
-    std::cout << "[Main] ⚙️ Generating test reconstruction...\n";
+    std::cout << "[Sainity Check] ⚙️ Generating test reconstruction...\n";
 
     float* h_batch_in  = new float[config.batch_size * 784];
     float* h_batch_out = new float[config.batch_size * 784];
@@ -109,9 +111,9 @@ int main(int argc, char** argv) {
     if (!write_raw(reco_path, h_batch_out, config.input_dim))
         std::cerr << "[" << sname << "] ERROR: cannot write " << reco_path << "\n";
 
-    std::cout << "[Main] ✅ Saved 'original.raw' and 'reconstructed.raw' (first image).\n";
+    std::cout << "[Sainity Check] ✅ Saved 'original.raw' and 'reconstructed.raw' (first image).\n";
 
-    std::cout << "[Main] ⚙️ Generating images from sampling...\n";
+    std::cout << "[Sainity Check] ⚙️ Generating images from sampling...\n";
 
     int n_samples = 16;   
     std::vector<float> h_samples(n_samples * config.input_dim);
