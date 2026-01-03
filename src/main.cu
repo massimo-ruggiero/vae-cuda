@@ -21,9 +21,19 @@ static std::string get_outdir(int argc, char** argv) {
     return outdir;
 }
 
-static std::string join_path(const std::string& dir, const std::string& file) {
+static std::string join_path(const std::string& dir, 
+                             const std::string& file, 
+                             int n) {
     namespace fs = std::filesystem;
     return (fs::path(dir) / fs::path(file)).string();
+}
+
+static bool write_raw(const std::string& path, const float* data) {
+    FILE* f = std::fopen(path.c_str(), "wb");
+    if (!f) return false;
+    std::fwrite(data, sizeof(float), n, f);
+    std::fclose(f);
+    return true;
 }
 
 static void save_samples_raw(const float* samples,
@@ -33,16 +43,8 @@ static void save_samples_raw(const float* samples,
     std::filesystem::create_directories(outdir);
     for (int i = 0; i < n_samples; ++i) {
         std::string path = outdir + "/sample_" + std::to_string(i) + ".raw";
-        FILE* f = std::fopen(path.c_str(), "wb");
-        if (!f) {
-            std::cerr << "[save_samples] ERROR opening " << path << "\n";
-            continue;
-        }
-        std::fwrite(samples + i * input_dim,
-                     sizeof(float),
-                     input_dim,
-                     f);
-        std::fclose(f);
+        if (!write_raw(path, samples + i * input_dim, input_dim))
+            std::cerr << "[save_samples] ERROR: cannot write " << path << "\n";
     }
     std::cout << "[save_samples] ✅ Saved " << n_samples
               << " samples to " << outdir << "\n";
@@ -124,9 +126,9 @@ int main(int argc, char** argv) {
         const std::string orig_path = join_path(outdir, "original.raw");
         const std::string reco_path = join_path(outdir, "reconstructed.raw");
 
-        if (!write_raw(orig_path, h_batch_in))
+        if (!write_raw(orig_path, h_batch_in, config.input_dim))
             std::cerr << "[" << sname << "] ERROR: cannot write " << orig_path << "\n";
-        if (!write_raw(reco_path, h_batch_out))
+        if (!write_raw(reco_path, h_batch_out, config.input_dim))
             std::cerr << "[" << sname << "] ERROR: cannot write " << reco_path << "\n";
 
 
