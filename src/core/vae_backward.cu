@@ -39,8 +39,8 @@ namespace vae {
         activations::leaky_relu::backward(buf.dec1.Z.ptr,
                                         grads.dec1.dA.ptr,
                                         grads.dec1.dZ.ptr,
-                                        batch_size * hidden_dim,
                                         0.2f,
+                                        batch_size * hidden_dim,
                                         strategy);
 
         linear::backward(buf.d_z.ptr,
@@ -108,8 +108,8 @@ namespace vae {
         activations::leaky_relu::backward(buf.enc1.Z.ptr,
                                         grads.enc1.dA.ptr,
                                         grads.enc1.dZ.ptr,
-                                        batch_size * hidden_dim,
                                         0.2f,
+                                        batch_size * hidden_dim,
                                         strategy);
 
         linear::backward(buf.d_X.ptr,

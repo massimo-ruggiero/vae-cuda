@@ -25,8 +25,8 @@ namespace vae {
         
         activations::leaky_relu::forward(buf.enc1.Z.ptr,
                                             buf.enc1.A.ptr,
-                                            batch_size * hidden_dim,
                                             0.2f,
+                                            batch_size * hidden_dim,
                                             strategy);
 
         linear::forward(buf.enc1.A.ptr,
@@ -66,8 +66,8 @@ namespace vae {
         
         activations::leaky_relu::forward(buf.dec1.Z.ptr,
                                             buf.dec1.A.ptr,
-                                            batch_size * hidden_dim,
                                             0.2f,
+                                            batch_size * hidden_dim,
                                             strategy);
 
         linear::forward(buf.dec1.A.ptr,
