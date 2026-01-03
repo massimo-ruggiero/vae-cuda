@@ -63,9 +63,9 @@ int main(int argc, char** argv) {
     const std::string outdir_base = get_outdir(argc, argv);
 
     try {
-        std::filesystem::create_directories(outdir);
+        std::filesystem::create_directories(outdir_base);
     } catch (const std::exception& e) {
-        std::cerr << "[main] ERROR: cannot create outdir '" << outdir
+        std::cerr << "[main] ERROR: cannot create outdir '" << outdir_base
                   << "': " << e.what() << "\n";
         return 1;
     }
@@ -146,7 +146,7 @@ int main(int argc, char** argv) {
         delete[] h_batch_in;
         delete[] h_batch_out;
     }
-    
+
     std::cout << "[main] ✅ Finished all strategies.\n";
     return 0;
 }
