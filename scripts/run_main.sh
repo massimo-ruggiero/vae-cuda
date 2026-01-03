@@ -5,6 +5,8 @@ set -euo pipefail
 ARCH="${ARCH:-sm_75}"
 OUT="${OUT:-main}"
 
+IMAGES_DIR="${RESULTS_DIR:-images}"
+
 # Include paths
 INCLUDES=(
   -Iinclude
@@ -46,4 +48,4 @@ nvcc -arch="${ARCH}" \
      -o "${OUT}"
 
 echo "[micro-bench] run: ./${OUT}"
-./"${OUT}" 
+./"${OUT}" --outdir "${IMAGES_DIR}"
