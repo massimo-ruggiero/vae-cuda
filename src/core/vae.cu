@@ -115,7 +115,7 @@ float VAE::train_step(const float* h_batch){
                   buf_.config.input_dim, 
                   buf_.config.latent_dim, 
                   buf_.config.strategy,
-                  buf_.config.beta,);
+                  buf_.config.beta);
     
     vae::backward(buf_, *grads_); 
 
