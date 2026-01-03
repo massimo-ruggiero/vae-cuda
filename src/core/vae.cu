@@ -6,6 +6,7 @@
 #include "utils.cuh"             
 
 #include <cmath>
+#include <iostream>
 #include <vector>
 #include <random>
 #include <cstdio>
