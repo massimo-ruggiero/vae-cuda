@@ -70,8 +70,7 @@ int main(int argc, char** argv) {
     const char* data_path = "data/train.bin";
 
     for (VAEStrategy s : strategies) {
-        VAEConfig cfg = base_cfg;
-        cfg.strategy = s;
+        config.strategy = s;
 
         const std::string sname = s.to_string();
         const std::string outdir = join_path(base_outdir, sname);
