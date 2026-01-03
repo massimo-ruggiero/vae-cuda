@@ -66,7 +66,7 @@ int main(int argc, char** argv) {
     };
 
     float learning_rate = 1e-3f;
-    int epochs = 100;
+    int epochs = 20;
     const char* data_path = "data/train.bin";
 
     for (VAEStrategy s : strategies) {
