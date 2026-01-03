@@ -114,8 +114,8 @@ float VAE::train_step(const float* h_batch){
                   buf_.config.batch_size, 
                   buf_.config.input_dim, 
                   buf_.config.latent_dim, 
-                  buf_.config.beta,
-                  buf_.strategy);
+                  buf_.config.strategy,
+                  buf_.config.beta,);
     
     vae::backward(buf_, *grads_); 
 
@@ -154,7 +154,7 @@ void VAE::decode(const float* h_z, float* h_output) {
                           buf_.config.batch_size * buf_.config.latent_dim * sizeof(float), 
                           cudaMemcpyHostToDevice));
 
-    vaedecoder_pass(buf_); 
+    vae::decoder_pass(buf_); 
 
     CUDA_CHECK(cudaMemcpy(h_output, buf_.d_X_hat.ptr, 
                           buf_.config.batch_size * buf_.config.input_dim * sizeof(float), 
