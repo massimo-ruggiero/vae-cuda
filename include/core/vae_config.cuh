@@ -10,6 +10,7 @@ enum class VAEStrategy {
     UNROLLED_REDUCTION,
     WARP_REDUCTION,
     VECTORIZED,
+    OPTIMIZED,
     KERNEL_FUSION
 };
 
@@ -22,6 +23,7 @@ inline const char* to_string(VAEStrategy s) {
         case VAEStrategy::UNROLLED_REDUCTION: return "Unrolled Reduction";
         case VAEStrategy::WARP_REDUCTION:     return "Warp Reduction";
         case VAEStrategy::VECTORIZED:         return "Vectorized";
+        case VAEStrategy::OPTIMIZED:          return "Optimized";
         case VAEStrategy::KERNEL_FUSION:      return "Kernel Fusion";
         default:                              return "Unknown";
     }

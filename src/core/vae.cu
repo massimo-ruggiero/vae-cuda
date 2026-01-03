@@ -11,6 +11,13 @@
 #include <cstdio>
 
 
+static void sample_normal(float* data, size_t n) {
+    std::mt19937 gen(1234);
+    std::normal_distribution<float> dist(0.0f, 1.0f);
+    for (size_t i = 0; i < n; ++i)
+        data[i] = dist(gen);
+}
+
 static void init_uniform(LinearLayer& layer, float limit) {
     std::vector<float> h_W(layer.input_dim * layer.output_dim);
     std::vector<float> h_b(layer.output_dim, 0.0f); 
@@ -174,13 +181,30 @@ void VAE::reconstruct(const float* h_input, float* h_output) {
 }
 
 void VAE::sample(float* h_output, int n_samples) {
-    // TODO
-}
+    const int latent_dim = buf_.config.latent_dim;
+    const int input_dim = buf_.config.input_dim;
 
-void VAE::save_weights(const char* filename) {
-    // TODO
-}
+    if (n_samples > buf_.config.batch_size) {
+        std::cerr << "[VAE::sample] ERROR: n_samples > batch_size\n";
+        return;
+    }
 
-void VAE::load_weights(const char* filename) {
-    // TODO
+    std::vector<float> h_z(n_samples * latent_dim);
+    sample_normal(h_z.data(), h_z.size());
+
+    CUDA_CHECK(cudaMemcpy(
+        buf_.d_z.ptr,
+        h_z.data(),
+        h_z.size() * sizeof(float),
+        cudaMemcpyHostToDevice
+    ));
+
+    vae::decoder_pass(buf_);
+
+    CUDA_CHECK(cudaMemcpy(
+        h_output,
+        buf_.d_X_hat.ptr,
+        n_samples * input_dim * sizeof(float),
+        cudaMemcpyDeviceToHost
+    ));
 }

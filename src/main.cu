@@ -26,12 +26,26 @@ static std::string join_path(const std::string& dir, const std::string& file) {
     return (fs::path(dir) / fs::path(file)).string();
 }
 
-static bool write_raw(const std::string& path, const float* data) {
-    FILE* f = std::fopen(path.c_str(), "wb");
-    if (!f) return false;
-    std::fwrite(data, sizeof(float), 784, f);
-    std::fclose(f);
-    return true;
+static void save_samples_raw(const float* samples,
+                             int n_samples,
+                             int input_dim,
+                             const std::string& outdir) {
+    std::filesystem::create_directories(outdir);
+    for (int i = 0; i < n_samples; ++i) {
+        std::string path = outdir + "/sample_" + std::to_string(i) + ".raw";
+        FILE* f = std::fopen(path.c_str(), "wb");
+        if (!f) {
+            std::cerr << "[save_samples] ERROR opening " << path << "\n";
+            continue;
+        }
+        std::fwrite(samples + i * input_dim,
+                     sizeof(float),
+                     input_dim,
+                     f);
+        std::fclose(f);
+    }
+    std::cout << "[save_samples] ✅ Saved " << n_samples
+              << " samples to " << outdir << "\n";
 }
 
 const std::vector<VAEStrategy> strategies = {
@@ -42,11 +56,11 @@ const std::vector<VAEStrategy> strategies = {
         VAEStrategy::UNROLLED_REDUCTION,
         VAEStrategy::WARP_REDUCTION,
         VAEStrategy::VECTORIZED,
-        VAEStrategy::KERNEL_FUSION
+        // VAEStrategy::KERNEL_FUSION  <- TODO
     };
 
 int main(int argc, char** argv) {
-    const std::string outdir = get_outdir(argc, argv);
+    const std::string outdir_base = get_outdir(argc, argv);
 
     try {
         std::filesystem::create_directories(outdir);
@@ -73,7 +87,7 @@ int main(int argc, char** argv) {
         config.strategy = s;
 
         const std::string sname = to_string(s);
-        const std::string outdir = join_path(outdir, sname);
+        const std::string outdir = join_path(outdir_base, sname);
 
         try {
             std::filesystem::create_directories(outdir);
@@ -118,9 +132,21 @@ int main(int argc, char** argv) {
 
         std::cout << "[Main] ✅ Saved 'original.raw' and 'reconstructed.raw' (first image).\n";
 
+        std::cout << "[Main] ⚙️ Generating images from sampling...\n";
+        int n_samples = 16;   
+        std::vector<float> h_samples(n_samples * config.input_dim);
+        vae.sample(h_samples.data(), n_samples);
+        save_samples_raw(
+            h_samples.data(),
+            n_samples,
+            config.input_dim,
+            outdir   
+        );
+
         delete[] h_batch_in;
         delete[] h_batch_out;
     }
+    
     std::cout << "[main] ✅ Finished all strategies.\n";
     return 0;
 }

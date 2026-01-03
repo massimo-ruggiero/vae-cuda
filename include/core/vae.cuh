@@ -25,9 +25,6 @@ class VAE {
 
         void free_training_resources();
 
-        void save_weights(const char* filename);
-        void load_weights(const char* filename);
-
         VAEBuffers& get_buffers() { return buf_; }
         VAEGradients& get_gradients() { return *grads_; }
 
