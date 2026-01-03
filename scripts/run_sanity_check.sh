@@ -3,7 +3,7 @@ set -euo pipefail
 
 # Default: Colab T4
 ARCH="${ARCH:-sm_75}"
-OUT="${OUT:-main}"
+OUT="${OUT:-main_sanity_check}"
 
 IMAGES_DIR="${RESULTS_DIR:-images}"
 
