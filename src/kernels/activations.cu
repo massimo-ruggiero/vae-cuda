@@ -188,11 +188,13 @@ namespace activations {
                 case VAEStrategy::WARP_REDUCTION: 
                     DEBUG("Launching leaky_relu_forward_naive_kernel...");
                     gridSize = (size + blockSize - 1) / blockSize;
+                    printf("size1=%d",gridSize)
                     leaky_relu_forward_naive_kernel<<<gridSize, blockSize>>>(d_Z, d_A, d_alpha, size);
                     break;
                 case VAEStrategy::VECTORIZED:
                 default:
                     DEBUG("Launching leaky_relu_forward_kernel...");
+                    printf("size2=%d",gridSize)
                     gridSize = ((size + 3) / 4 + blockSize - 1) / blockSize;
                     leaky_relu_forward_vec4_kernel<<<gridSize, blockSize>>>(d_Z, d_A, d_alpha, size);
                     break;
