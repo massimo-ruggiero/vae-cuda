@@ -93,11 +93,10 @@ Csv::~Csv() {
     }
 }
 
-void Csv::header(const DeviceSpecs& dev) {
-    std::fprintf(f, "# device=%s\n", dev.name.c_str());
-    std::fprintf(f, "# peak_gflops_fp32=%.6f\n", dev.peak_gflops_fp32);
-    std::fprintf(f, "# peak_bandwidth_gbps=%.6f\n", dev.peak_bandwidth_gbps);
-    std::fprintf(f, "# ridge_point=%.6f\n", dev.ridge_point());
+void Csv::header(const DeviceSpecs& specs) {
+    std::fprintf(f, "# peak_gflops_fp32=%.6f\n", specs.peak_gflops_fp32);
+    std::fprintf(f, "# peak_bandwidth_gbps=%.6f\n", specs.peak_bandwidth_gbps);
+    std::fprintf(f, "# ridge_point=%.6f\n", specs.ridge_point());
     
     std::fprintf(f,
         "op,strategy,M,K,N,time_ms,time_ms_std,bytes_lb,flops,"

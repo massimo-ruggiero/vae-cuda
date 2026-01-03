@@ -49,7 +49,7 @@ public:
     explicit Csv(const char* path);
     ~Csv();
 
-    void header();
+    void header(const DeviceSpecs& specs);
     void row(const char* op,
              const char* strat,
              int M, int K, int N,

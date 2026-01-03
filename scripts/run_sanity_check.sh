@@ -20,7 +20,7 @@ INCLUDES=(
 
 # Sources for micro-bench
 SRCS=(
-  src/main.cu
+  src/main_sanity_check.cu
   src/core/vae_forward.cu
   src/core/vae_backward.cu
   src/core/vae.cu
