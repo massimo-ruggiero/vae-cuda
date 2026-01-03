@@ -45,7 +45,7 @@ int main(int argc, char** argv) {
     Timer timer;
 
     DeviceSpecs specs = DeviceSpecs::detect();
-    std::cout << "\n🚀 Launching micro benchmark suite\n";
+    std::cout << "\n🚀 Launching micro benchmark...\n";
     std::cout << "---------------------------------\n";
 
     // ====================
@@ -54,7 +54,7 @@ int main(int argc, char** argv) {
     {
         std::cout << "\n[Benchmark] ⚙️ Linalg...\n";
         Csv csv(join_path(outdir, "bench_linalg.csv").c_str());
-        csv.header();
+        csv.header(specs);
 
         run_sgemm(csv, gen, timer, config, specs);
         run_transpose(csv, gen, timer, config, specs);
@@ -68,7 +68,7 @@ int main(int argc, char** argv) {
     {
         std::cout << "\n[Benchmark] ⚙️ Activations...\n";
         Csv csv(join_path(outdir, "bench_activations.csv").c_str());
-        csv.header();
+        csv.header(specs);
 
         run_leaky_relu_forward(csv, gen, timer, config, specs);
         run_leaky_relu_backward(csv, gen, timer, config, specs);
@@ -83,7 +83,7 @@ int main(int argc, char** argv) {
     {
         std::cout << "\n[Benchmark] ⚙️ Loss...\n";
         Csv csv(join_path(outdir, "bench_loss.csv").c_str());
-        csv.header();
+        csv.header(specs);
 
         run_loss_forward(csv, gen, timer, config, specs);
         run_bce_backward(csv, gen, timer, config, specs);
@@ -97,7 +97,7 @@ int main(int argc, char** argv) {
     {
         std::cout << "\n[Benchmark] ⚙️ Reparametrization...\n";
         Csv csv(join_path(outdir, "bench_reparam.csv").c_str());
-        csv.header();
+        csv.header(specs);
 
         run_reparam_forward(csv, gen, timer, config, specs);
         run_reparam_backward(csv, gen, timer, config, specs);
@@ -110,7 +110,7 @@ int main(int argc, char** argv) {
     {
         std::cout << "\n[Benchmark] ⚙️ Optimizers...\n";
         Csv csv(join_path(outdir, "bench_optimizers.csv").c_str());
-        csv.header();
+        csv.header(specs);
 
         run_adam_step(csv, gen, timer, config, specs);
         std::cout << "[Benchmark] ✅ Optimizers done.\n";
@@ -118,7 +118,7 @@ int main(int argc, char** argv) {
 
     curandDestroyGenerator(gen);
 
-    std::cout << "\n✅ Benchmark suite completed successfully.\n";
+    std::cout << "\n✅ Micro benchmark completed successfully.\n";
     std::cout << "---------------------------------\n";
     return 0;
 }

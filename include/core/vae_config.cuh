@@ -30,7 +30,7 @@ inline const char* to_string(VAEStrategy s) {
 }
 
 struct VAEConfig {
-    size_t batch_size = 100;
+    size_t batch_size = 128;
     size_t input_dim = 784;
     size_t hidden_dim = 400;
     size_t latent_dim = 200;

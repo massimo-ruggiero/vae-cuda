@@ -51,101 +51,78 @@ static void save_samples_raw(const float* samples,
               << " samples to " << outdir << "\n";
 }
 
-const std::vector<VAEStrategy> strategies = {
-        VAEStrategy::NAIVE,
-        VAEStrategy::TILING,
-        VAEStrategy::PADDING,
-        VAEStrategy::REDUCTION,
-        VAEStrategy::UNROLLED_REDUCTION,
-        VAEStrategy::WARP_REDUCTION,
-        VAEStrategy::VECTORIZED,
-        // VAEStrategy::KERNEL_FUSION  <- TODO
-    };
 
 int main(int argc, char** argv) {
-    const std::string outdir_base = get_outdir(argc, argv);
+    const std::string outdir = get_outdir(argc, argv);
 
     try {
-        std::filesystem::create_directories(outdir_base);
+        std::filesystem::create_directories(outdir);
     } catch (const std::exception& e) {
-        std::cerr << "[main] ERROR: cannot create outdir '" << outdir_base
+        std::cerr << "[main] ERROR: cannot create outdir '" << outdir
                   << "': " << e.what() << "\n";
         return 1;
     }
 
     VAEConfig config = {
-        .batch_size = 100,
+        .batch_size = 128,
         .input_dim  = 784,
         .hidden_dim = 400,
         .latent_dim = 200,
         .beta       = 1.0f,
-        .strategy   = VAEStrategy::NAIVE
+        .strategy   = VAEStrategy::OPTIMIZED
     };
 
     float learning_rate = 1e-3f;
     int epochs = 20;
     const char* data_path = "data/train.bin";
 
-    for (VAEStrategy s : strategies) {
-        config.strategy = s;
+    const std::string sname = to_string(s);
 
-        const std::string sname = to_string(s);
-        const std::string outdir = join_path(outdir_base, sname);
-
-        try {
-            std::filesystem::create_directories(outdir);
-        } catch (const std::exception& e) {
-            std::cerr << "[" << sname << "] ERROR: cannot create dir '" << outdir
-                      << "': " << e.what() << "\n";
-            continue;
-        }
-
-        std::cout << "\n==============================\n";
-        std::cout << "[main] Running strategy: " << sname << "\n";
-        std::cout << "[main] Outdir: " << outdir << "\n";
-        std::cout << "==============================\n";
-
-        MNISTLoader loader(data_path);
-        VAE vae(config);
-        Adam optimizer(config, learning_rate);
-        Trainer trainer(vae, optimizer, loader, config);
-        trainer.fit(epochs);
-
-        std::cout << "[Main] ⚙️ Generating test reconstruction...\n";
-
-        float* h_batch_in  = new float[config.batch_size * 784];
-        float* h_batch_out = new float[config.batch_size * 784];
-
-        loader.shuffle();
-        loader.next_batch(h_batch_in, config.batch_size);
-        vae.reconstruct(h_batch_in, h_batch_out);
-
-        const std::string orig_path = join_path(outdir, "original.raw");
-        const std::string reco_path = join_path(outdir, "reconstructed.raw");
-
-        if (!write_raw(orig_path, h_batch_in, config.input_dim))
-            std::cerr << "[" << sname << "] ERROR: cannot write " << orig_path << "\n";
-        if (!write_raw(reco_path, h_batch_out, config.input_dim))
-            std::cerr << "[" << sname << "] ERROR: cannot write " << reco_path << "\n";
-
-
-        std::cout << "[Main] ✅ Saved 'original.raw' and 'reconstructed.raw' (first image).\n";
-
-        std::cout << "[Main] ⚙️ Generating images from sampling...\n";
-        int n_samples = 16;   
-        std::vector<float> h_samples(n_samples * config.input_dim);
-        vae.sample(h_samples.data(), n_samples);
-        save_samples_raw(
-            h_samples.data(),
-            n_samples,
-            config.input_dim,
-            outdir   
-        );
-
-        delete[] h_batch_in;
-        delete[] h_batch_out;
+    try {
+        std::filesystem::create_directories(outdir);
+    } catch (const std::exception& e) {
+        std::cerr << "[" << sname << "] ERROR: cannot create dir '" << outdir
+                    << "': " << e.what() << "\n";
+        continue;
     }
 
-    std::cout << "[main] ✅ Finished all strategies.\n";
+    MNISTLoader loader(data_path);
+    VAE vae(config);
+    Adam optimizer(config, learning_rate);
+    Trainer trainer(vae, optimizer, loader, config);
+    trainer.fit(epochs);
+
+    std::cout << "[Main] ⚙️ Generating test reconstruction...\n";
+
+    float* h_batch_in  = new float[config.batch_size * 784];
+    float* h_batch_out = new float[config.batch_size * 784];
+
+    loader.shuffle();
+    loader.next_batch(h_batch_in, config.batch_size);
+    vae.reconstruct(h_batch_in, h_batch_out);
+
+    const std::string orig_path = join_path(outdir, "original.raw");
+    const std::string reco_path = join_path(outdir, "reconstructed.raw");
+
+    if (!write_raw(orig_path, h_batch_in, config.input_dim))
+        std::cerr << "[" << sname << "] ERROR: cannot write " << orig_path << "\n";
+    if (!write_raw(reco_path, h_batch_out, config.input_dim))
+        std::cerr << "[" << sname << "] ERROR: cannot write " << reco_path << "\n";
+
+    std::cout << "[Main] ✅ Saved 'original.raw' and 'reconstructed.raw' (first image).\n";
+
+    std::cout << "[Main] ⚙️ Generating images from sampling...\n";
+
+    int n_samples = 16;   
+    std::vector<float> h_samples(n_samples * config.input_dim);
+    vae.sample(h_samples.data(), n_samples);
+    save_samples_raw(h_samples.data(),
+                     n_samples,
+                     config.input_dim,
+                     outdir);
+
+    delete[] h_batch_in;
+    delete[] h_batch_out;
+
     return 0;
 }
