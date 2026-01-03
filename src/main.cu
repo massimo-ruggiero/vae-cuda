@@ -8,7 +8,7 @@
 #include "trainer.cuh"
 
 
-tatic std::string get_outdir(int argc, char** argv) {
+static std::string get_outdir(int argc, char** argv) {
     std::string outdir = "images";
     for (int i = 1; i < argc; ++i) {
         std::string arg(argv[i]);
