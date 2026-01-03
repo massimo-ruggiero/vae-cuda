@@ -72,8 +72,8 @@ int main(int argc, char** argv) {
     for (VAEStrategy s : strategies) {
         config.strategy = s;
 
-        const std::string sname = s.to_string();
-        const std::string outdir = join_path(base_outdir, sname);
+        const std::string sname = to_string(s);
+        const std::string outdir = join_path(outdir, sname);
 
         try {
             std::filesystem::create_directories(outdir);
