@@ -8,7 +8,8 @@ Adam::Adam(const VAEConfig& config, float lr, float beta1, float beta2, float ep
       beta1_(beta1), 
       beta2_(beta2), 
       epsilon_(epsilon), 
-      timestep_(0) {
+      timestep_(0),
+      config_(config) {
       
     state_ = new VAEAdamState(config);
 }
@@ -29,7 +30,7 @@ void Adam::apply_layer(LinearLayer& l, LinearGrads& g, AdamState& s) {
         s.v_W.ptr, 
         timestep_, 
         l.input_dim * l.output_dim, 
-        state_.config.strategy,
+        config_.strategy,
         lr_, 
         beta1_, 
         beta2_, 
@@ -44,7 +45,7 @@ void Adam::apply_layer(LinearLayer& l, LinearGrads& g, AdamState& s) {
         s.v_b.ptr, 
         timestep_, 
         l.output_dim, 
-        state_.config.strategy,
+        config_.strategy,
         lr_, 
         beta1_, 
         beta2_, 

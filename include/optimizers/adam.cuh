@@ -10,6 +10,7 @@ private:
     float beta2_;
     float epsilon_;
     int timestep_;
+    VAEConfig config_;
 
     void apply_layer(LinearLayer& l, LinearGrads& g, AdamState& s);
 
