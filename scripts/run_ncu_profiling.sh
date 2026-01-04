@@ -60,10 +60,9 @@ for kf in "${KERNEL_FILE_LIST[@]}"; do
   echo "[micro-bench] profiling kernel file = ${kf}"
 
   ncu --set full \
-      --target-processes application \
       --profile-from-start yes \
       --force-overwrite true \
-      --export "${report}" \
+      --o "${report}" \
       -- ./"${OUT}" \
       --outdir "${RESULTS_DIR}" \
       --option profiling \
