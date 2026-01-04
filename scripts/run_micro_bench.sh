@@ -40,7 +40,6 @@ echo "[micro-bench] build: nvcc -arch=${ARCH} -> ${OUT}"
 nvcc -arch="${ARCH}" \
      "${INCLUDES[@]}" \
      "${SRCS[@]}" \
-     -lcurand \
      -lineinfo \
      -o "${OUT}"
 

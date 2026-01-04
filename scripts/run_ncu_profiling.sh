@@ -43,7 +43,6 @@ echo "[micro-bench] build: nvcc -arch=${ARCH} -> ${OUT}"
 nvcc -arch="${ARCH}" \
      "${INCLUDES[@]}" \
      "${SRCS[@]}" \
-     -lcurand \
      -lineinfo \
      -o "${OUT}"
 
@@ -71,4 +70,6 @@ EOF
       --import-source yes \
       --export "${report}" \
       ./"${runner}"
+
+  rm -f "${runner}"
 done
