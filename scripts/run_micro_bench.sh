@@ -4,7 +4,6 @@ set -euo pipefail
 # Default: Colab T4
 ARCH="${ARCH:-sm_75}"
 OUT="${OUT:-micro_bench}"
-OPTION="${OPTION:-benchmark}"
 
 RESULTS_DIR="${RESULTS_DIR:-results/micro_bench/csv}"
 
@@ -47,4 +46,4 @@ nvcc -arch="${ARCH}" \
 
 echo "[micro-bench] run: ./${OUT}"
 ./"${OUT}" --outdir "${RESULTS_DIR}" \
-           --option "${OPTION}"
+           --option benchmark

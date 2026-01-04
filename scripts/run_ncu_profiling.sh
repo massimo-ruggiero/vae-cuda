@@ -3,7 +3,6 @@ set -euo pipefail
 
 # Default: Colab T4
 ARCH="${ARCH:-sm_75}"
-OPTION="${OPTION:-profiling}"
 OUT="${OUT:-micro_bench}"
 
 RESULTS_DIR="${RESULTS_DIR:-results/micro_bench/ncu}"
@@ -56,14 +55,18 @@ for kf in "${KERNEL_FILE_LIST[@]}"; do
   kf=$(echo "${kf}" | tr -d ' ')
   [ -z "${kf}" ] && continue
 
-  path="${RESULTS_DIR}/${kf}.ncu-rep"
+  report="${RESULTS_DIR}/${kf}"
 
-  echo "[micro-bench] profiling kernel file=${kf}"
+  echo "[micro-bench] profiling kernel file = ${kf}"
+
   ncu --set full \
-      --export "${path}" \
+      --target-processes application \
+      --profile-from-start yes \
       --force-overwrite true \
+      --export "${report}" \
       -- ./"${OUT}" \
       --outdir "${RESULTS_DIR}" \
-      --option "${OPTION}" \
+      --option profiling \
       --kernel-file "${kf}"
+
 done
