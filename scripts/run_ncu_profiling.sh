@@ -56,7 +56,7 @@ for kf in "${KERNEL_FILE_LIST[@]}"; do
   kf=$(echo "${kf}" | tr -d ' ')
   [ -z "${kf}" ] && continue
 
-  path="${RESULTS_DIR}/${kf}"
+  path="${RESULTS_DIR}/${kf}.ncu-rep"
 
   echo "[micro-bench] profiling kernel file=${kf}"
   ncu --set full \
