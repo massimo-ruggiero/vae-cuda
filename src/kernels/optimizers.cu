@@ -144,6 +144,7 @@ namespace optimizers {
                     adam_step_naive_kernel<<<gridSize, blockSize>>>(d_g, d_theta, d_m, d_v, size, lr, beta1, beta2, inv_bc1, inv_bc2, epsilon);
                     break;
                 case VAEStrategy::VECTORIZED:
+                case VAEStrategy::OPTIMIZED:
                 default:
                     gridSize = ((size + 3) / 4 + blockSize - 1) / blockSize;
                     DEBUG("Launching adam_step_vec4_kernel...");

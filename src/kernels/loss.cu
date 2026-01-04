@@ -498,6 +498,7 @@ namespace loss {
                 bce_forward_warp_reduction_kernel<<<gridSize_bce, blockSize, blockSize * sizeof(float)>>>(d_X, d_Z, d_bce, size_bce, inv_batch);
                 break;
             case VAEStrategy::VECTORIZED:
+            case VAEStrategy::OPTIMIZED: 
             default:
                 gridSize_bce = ((size_bce + 3) / 4 + blockSize - 1) / blockSize;
                 DEBUG("Launching bce_forward_vec4_kernel...");
@@ -529,6 +530,7 @@ namespace loss {
                 kl_forward_warp_reduction_kernel<<<gridSize_kl, blockSize, blockSize * sizeof(float)>>>(d_mu, d_logvar, d_kl, size_kl, inv_batch);
                 break;
             case VAEStrategy::VECTORIZED:
+            case VAEStrategy::OPTIMIZED: 
             default:
                 gridSize_kl = ((size_kl + 3) / 4 + blockSize - 1) / blockSize;
                 DEBUG("Launching kl_forward_vec4_kernel...");
@@ -565,15 +567,12 @@ namespace loss {
                     bce_backward_naive_kernel<<<gridSize, blockSize>>>(d_X, d_X_hat, d_dA, size);
                     break;   
                 case VAEStrategy::VECTORIZED: 
+                case VAEStrategy::OPTIMIZED: 
+                default:  
                     gridSize = ((size + 3) / 4 + blockSize - 1) / blockSize;
                     DEBUG("Launching bce_backward_vec4_kernel...");
                     bce_backward_vec4_kernel<<<gridSize, blockSize>>>(d_X, d_X_hat, d_dA, size);
-                    break;
-                default:  
-                    gridSize = (size + blockSize - 1) / blockSize;
-                    DEBUG("Launching bce_backward_naive_kernel...");
-                    bce_backward_naive_kernel<<<gridSize, blockSize>>>(d_X, d_X_hat, d_dA, size);
-                    break;      
+                    break;  
             }
 
             CUDA_CHECK(cudaGetLastError());
@@ -601,6 +600,7 @@ namespace loss {
                     kl_backward_naive_kernel<<<gridSize, blockSize>>>(d_mu, d_logvar, d_dmu, d_dlogvar, size, beta); 
                     break;   
                 case VAEStrategy::VECTORIZED: 
+                case VAEStrategy::OPTIMIZED: 
                 default: 
                     gridSize = ((size + 3) / 4 + blockSize - 1) / blockSize;
                     DEBUG("Launching kl_backward_vec4_kernel...");

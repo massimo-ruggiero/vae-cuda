@@ -315,6 +315,7 @@ namespace linalg {
                 sgemm_padding_kernel<<<gridSize, blockSize>>>(d_A, d_B, d_C, M, K, N);
                 break;
             case VAEStrategy::VECTORIZED: 
+            case VAEStrategy::OPTIMIZED:
             default:
                 gridSize = dim3((N + (blockSize.x * COARSE_FACTOR) - 1) / (blockSize.x * COARSE_FACTOR),
                                 (M + blockSize.y - 1) / blockSize.y);
@@ -343,7 +344,8 @@ namespace linalg {
                 DEBUG("Launching transpose_tiling_kernel...");
                 transpose_tiling_kernel<<<gridSize, blockSize>>>(d_A, d_AT, M, N);
                 break;
-            case VAEStrategy::PADDING: 
+            case VAEStrategy::PADDING:
+            case VAEStrategy::OPTIMIZED: 
             default:
                 DEBUG("Launching transpose_padding_kernel...");
                 transpose_padding_kernel<<<gridSize, blockSize>>>(d_A, d_AT, M, N);
@@ -366,14 +368,11 @@ namespace linalg {
                 add_inplace_naive_kernel<<<gridSize, blockSize>>>(d_A, d_B, size);
                 break;
             case VAEStrategy::VECTORIZED:
+            case VAEStrategy::OPTIMIZED:
+            default
                 gridSize  = ((size + 3) / 4 + blockSize - 1) / blockSize;
                 DEBUG("Launching add_inplace_vec4_kernel...");
                 add_inplace_vec4_kernel<<<gridSize, blockSize>>>(d_A, d_B, size);
-                break;
-            default:
-                gridSize  = (size + blockSize - 1) / blockSize;
-                DEBUG("Launching add_inplace_naive_kernel...");
-                add_inplace_naive_kernel<<<gridSize, blockSize>>>(d_A, d_B, size);
                 break;
         }
 

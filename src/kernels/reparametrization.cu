@@ -192,6 +192,7 @@ namespace reparametrization {
                 reparametrization_forward_naive_kernel<<<gridSize, blockSize>>>(d_mu, d_logvar, d_z, d_epsilon, d_states, size);
                 break;
             case VAEStrategy::VECTORIZED:
+            case VAEStrategy::OPTIMIZED: 
             default:
                 gridSize = ((size + 3) / 4 + blockSize - 1) / blockSize;
                 DEBUG("Launching reparametrization_forward_vec4_kernel...");
@@ -224,6 +225,7 @@ namespace reparametrization {
                 reparametrization_backward_naive_kernel<<<gridSize, blockSize>>>(d_dz, d_logvar, d_epsilon, d_dmu, d_dlogvar, size);
                 break;
             case VAEStrategy::VECTORIZED:
+            case VAEStrategy::OPTIMIZED: 
             default:
                 gridSize = ((size + 3) / 4 + blockSize - 1) / blockSize;
                 DEBUG("Launching reparametrization_backward_vec4_kernel...");

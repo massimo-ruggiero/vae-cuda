@@ -69,11 +69,11 @@ int main(int argc, char** argv) {
         .hidden_dim = 400,
         .latent_dim = 200,
         .beta       = 1.0f,
-        .strategy   = VAEStrategy::OPTIMIZED
+        .strategy   = VAEStrategy::NAIVE
     };
 
     float learning_rate = 1e-3f;
-    int epochs = 20;
+    int epochs = 50;
     const char* data_path = "data/train.bin";
 
     const std::string sname = to_string(config.strategy);

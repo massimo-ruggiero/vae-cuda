@@ -1,5 +1,8 @@
 #pragma once
 #include <cstddef>
+#include <string>
+#include <algorithm>
+#include <cctype>
 
 
 enum class VAEStrategy {
@@ -28,6 +31,39 @@ inline const char* to_string(VAEStrategy s) {
         default:                              return "Unknown";
     }
 }
+
+
+inline bool parse_strategy(const std::string& name, 
+                           VAEStrategy& out) {
+    std::string s = name;
+
+    for (char& c : s) {
+        c = static_cast<char>(std::toupper(c));
+    }
+    if (s == "NAIVE") {
+        out = VAEStrategy::NAIVE;
+    } else if (s == "TILING") {
+        out = VAEStrategy::TILING;
+    } else if (s == "PADDING") {
+        out = VAEStrategy::PADDING;
+    } else if (s == "REDUCTION") {
+        out = VAEStrategy::REDUCTION;
+    } else if (s == "UNROLLED_REDUCTION") {
+        out = VAEStrategy::UNROLLED_REDUCTION;
+    } else if (s == "WARP_REDUCTION") {
+        out = VAEStrategy::WARP_REDUCTION;
+    } else if (s == "VECTORIZED") {
+        out = VAEStrategy::VECTORIZED;
+    } else if (s == "OPTIMIZED") {
+        out = VAEStrategy::OPTIMIZED;
+    } else if (s == "KERNEL_FUSION") {
+        out = VAEStrategy::KERNEL_FUSION;
+    } else {
+        return false;
+    }
+    return true;
+}
+
 
 struct VAEConfig {
     size_t batch_size = 128;
