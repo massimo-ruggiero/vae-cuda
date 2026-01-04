@@ -101,7 +101,7 @@ int main(int argc, char** argv) {
     DeviceSpecs specs = DeviceSpecs::detect();
     std::cout << "\n🚀 Launching micro benchmark (" << args.option << ")...\n";
     if (args.kernel_file != "all") {
-        std::cout << "Running only bench: " << args.kernel_file << "\n";
+        std::cout << "Running kernel file: " << args.kernel_file << "\n";
     }
     if (args.option == "profiling") {
         std::cout << "Running with no warmup and a single iteration per kernel.\n";

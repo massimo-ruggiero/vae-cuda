@@ -54,17 +54,19 @@ IFS=',' read -r -a KERNEL_FILE_LIST <<< "${KERNEL_FILES}"
 
 for kf in "${KERNEL_FILE_LIST[@]}"; do
   bench=$(echo "${kf}" | tr -d ' ')
-  [ -z "${kf}" ] && continue
+  [ -z "${bench}" ] && continue
 
-  outdir="${RESULTS_DIR}/${kf}"
+  outdir="${RESULTS_DIR}/${bench}"
   mkdir -p "${outdir}"
 
-  echo "[micro-bench] profiling kernel file=${kf}"
+  echo "[micro-bench] profiling kernel file=${bench}"
   ncu --set full \
-      --export "${RESULTS_DIR}/${kf}" \
+      --target-processes all \
+      --profile-from-start yes \
+      --export "${RESULTS_DIR}/${bench}" \
       --force-overwrite true \
       -- ./"${OUT}" \
       --outdir "${outdir}" \
       --option "${OPTION}" \
-      --kernel-file "${kf}"
+      --kernel-file "${bench}"
 done
