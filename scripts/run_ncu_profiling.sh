@@ -61,14 +61,19 @@ for kf in "${KERNEL_FILE_LIST[@]}"; do
 
   echo "[micro-bench] profiling kernel file = ${kf}"
 
+  runner="${outdir}/run_${kf}.sh"
+  cat > "${runner}" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+"$(pwd)/${OUT}" --option profiling --kernel-file "${kf}" --outdir "${outdir}"
+EOF
+  chmod +x "${runner}"
+
   ncu --set full \
       --target-processes all \
       --profile-from-start yes \
       --import-source yes \
       --export "${report}" \
       --force-overwrite true \
-      -- ./"${OUT}" \
-      --outdir "${outdir}" \
-      --option profiling \
-      --kernel-file "${kf}"
+      -- "${runner}"
 done
