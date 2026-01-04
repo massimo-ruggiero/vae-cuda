@@ -12,12 +12,14 @@
 struct CliArgs {
     std::string outdir;
     std::string option;
+    std::string bench;
 };
 
 static CliArgs parse_cli(int argc, char** argv) {
     CliArgs args{
         .outdir = "",
-        .option = "benchmark"
+        .option = "benchmark",
+        .kernel_file = "all"
     };
 
     for (int i = 1; i < argc; ++i) {
@@ -26,12 +28,25 @@ static CliArgs parse_cli(int argc, char** argv) {
             args.outdir = argv[i + 1];
         } else if (arg == "--option" && i + 1 < argc) {
             args.option = argv[i + 1];
+        } else if (arg == "--kernel-file" && i + 1 < argc) {
+            args.kernel_file = argv[i + 1];
         }
     }
 
     if (args.option != "benchmark" && args.option != "profiling") {
         std::cerr << "[micro-bench] ERROR: unsupported option '" << args.option
                   << "'. Use 'benchmark' or 'profiling'.\n";
+        std::exit(1);
+    }
+
+    if (args.kernel_file != "all" &&
+        args.kernel_file != "linalg" &&
+        args.kernel_file != "activations" &&
+        args.kernel_file != "loss" &&
+        args.kernel_file != "reparam" &&
+        args.kernel_file != "optimizers") {
+        std::cerr << "[micro-bench] ERROR: unsupported kernel file '" << args.kernel_file
+                  << "'. Use one of: all, linalg, activations, loss, reparam, optimizers.\n";
         std::exit(1);
     }
 
@@ -61,6 +76,11 @@ static BenchmarkConfig make_config(const std::string& option) {
     return config;
 }
 
+static bool should_run(const std::string& kernel_file, 
+                       const std::string& filter) {
+    return filter == "all" || filter == kernel_file;
+}
+
 int main(int argc, char** argv) {
     const CliArgs args = parse_cli(argc, argv);
     const bool write_csv = (args.option == "benchmark");
@@ -80,6 +100,9 @@ int main(int argc, char** argv) {
 
     DeviceSpecs specs = DeviceSpecs::detect();
     std::cout << "\n🚀 Launching micro benchmark (" << args.option << ")...\n";
+    if (args.kernel_file != "all") {
+        std::cout << "Running only bench: " << args.kernel_file << "\n";
+    }
     if (args.option == "profiling") {
         std::cout << "Running with no warmup and a single iteration per kernel.\n";
     }
@@ -88,7 +111,7 @@ int main(int argc, char** argv) {
     // ====================
     // LINALG BENCHMARK
     // ====================
-    {
+    if (should_run("linalg", args.kernel_file)) {
         std::cout << "\n[Benchmark] ⚙️ Linalg...\n";
         Csv csv(join_path(args.outdir, "bench_linalg.csv").c_str(), write_csv);
         csv.header(specs);
@@ -102,7 +125,7 @@ int main(int argc, char** argv) {
     // ====================
     // ACTIVATIONS BENCHMARK
     // ====================
-    {
+    if (should_run("activations", args.kernel_file)) {
         std::cout << "\n[Benchmark] ⚙️ Activations...\n";
         Csv csv(join_path(args.outdir, "bench_activations.csv").c_str(), write_csv);
         csv.header(specs);
@@ -117,7 +140,7 @@ int main(int argc, char** argv) {
     // ====================
     // LOSS BENCHMARK
     // ====================
-    {
+    if (should_run("loss", args.kernel_file)) {
         std::cout << "\n[Benchmark] ⚙️ Loss...\n";
         Csv csv(join_path(args.outdir, "bench_loss.csv").c_str(), write_csv);
         csv.header(specs);
@@ -131,7 +154,7 @@ int main(int argc, char** argv) {
     // ====================
     // REPARAMETRIZATION BENCHMARK
     // ====================
-    {
+    if (should_run("reparam", args.kernel_file)) {
         std::cout << "\n[Benchmark] ⚙️ Reparametrization...\n";
         Csv csv(join_path(args.outdir, "bench_reparam.csv").c_str(), write_csv);
         csv.header(specs);
@@ -144,7 +167,7 @@ int main(int argc, char** argv) {
     // ====================
     // OPTIMIZER BENCHMARK
     // ====================
-    {
+    if (should_run("optimizers", args.kernel_file)) {
         std::cout << "\n[Benchmark] ⚙️ Optimizers...\n";
         Csv csv(join_path(args.outdir, "bench_optimizers.csv").c_str(), write_csv);
         csv.header(specs);

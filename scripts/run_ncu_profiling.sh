@@ -7,6 +7,9 @@ OPTION="${OPTION:-profiling}"
 OUT="${OUT:-micro_bench}"
 
 RESULTS_DIR="${RESULTS_DIR:-results/micro_bench/ncu}"
+KERNEL_FILES="${KERNEL_FILES:-linalg,activations,loss,reparam,optimizers}"
+
+mkdir -p "${RESULTS_DIR}"
 
 # Include paths
 INCLUDES=(
@@ -47,7 +50,21 @@ nvcc -arch="${ARCH}" \
 
 echo "[micro-bench] run profiling on ./${OUT}"
 
-ncu --set full \
-    ./"${OUT}" \
-    --outdir "${RESULTS_DIR}" \
-    --option "${OPTION}"
+IFS=',' read -r -a KERNEL_FILE_LIST <<< "${KERNEL_FILES}"
+
+for kf in "${KERNEL_FILE_LIST[@]}"; do
+  bench=$(echo "${kf}" | tr -d ' ')
+  [ -z "${kf}" ] && continue
+
+  outdir="${RESULTS_DIR}/${kf}"
+  mkdir -p "${outdir}"
+
+  echo "[micro-bench] profiling kernel file=${kf}"
+  ncu --set full \
+      --export "${RESULTS_DIR}/${kf}" \
+      --force-overwrite true \
+      -- ./"${OUT}" \
+      --outdir "${outdir}" \
+      --option "${OPTION}" \
+      --kernel-file "${kf}"
+done
