@@ -43,6 +43,7 @@ echo "[micro-bench] build: nvcc -arch=${ARCH} -> ${OUT}"
 nvcc -arch="${ARCH}" \
      "${INCLUDES[@]}" \
      "${SRCS[@]}" \
+     -lcurand \
      -lineinfo \
      -o "${OUT}"
 
@@ -68,6 +69,7 @@ EOF
 
   ncu --set full \
       --import-source yes \
+      --kernel-name "*_kernel" \
       --export "${report}" \
       ./"${runner}"
 
