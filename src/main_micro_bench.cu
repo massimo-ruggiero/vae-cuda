@@ -12,7 +12,7 @@
 struct CliArgs {
     std::string outdir;
     std::string option;
-    std::string bench;
+    std::string kernel_file;
 };
 
 static CliArgs parse_cli(int argc, char** argv) {
