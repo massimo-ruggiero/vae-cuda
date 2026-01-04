@@ -56,8 +56,6 @@ for kf in "${KERNEL_FILE_LIST[@]}"; do
   [ -z "${kf}" ] && continue
 
   report="${RESULTS_DIR}/${kf}"
-  outdir="${RESULTS_DIR}/${kf}"
-  mkdir -p "${outdir}"
 
   echo "[micro-bench] profiling kernel file = ${kf}"
 
@@ -65,7 +63,7 @@ for kf in "${KERNEL_FILE_LIST[@]}"; do
   cat > "${runner}" <<EOF
 #!/usr/bin/env bash
 set -euo pipefail
-"$(pwd)/${OUT}" --option profiling --kernel-file "${kf}" --outdir "${outdir}"
+"$(pwd)/${OUT}" --option profiling --kernel-file "${kf}" --outdir "${RESULTS_DIR}"
 EOF
   chmod +x "${runner}"
 
