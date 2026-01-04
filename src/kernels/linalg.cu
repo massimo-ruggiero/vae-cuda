@@ -369,7 +369,7 @@ namespace linalg {
                 break;
             case VAEStrategy::VECTORIZED:
             case VAEStrategy::OPTIMIZED:
-            default
+            default:
                 gridSize  = ((size + 3) / 4 + blockSize - 1) / blockSize;
                 DEBUG("Launching add_inplace_vec4_kernel...");
                 add_inplace_vec4_kernel<<<gridSize, blockSize>>>(d_A, d_B, size);
