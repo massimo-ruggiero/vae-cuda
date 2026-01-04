@@ -56,14 +56,19 @@ for kf in "${KERNEL_FILE_LIST[@]}"; do
   [ -z "${kf}" ] && continue
 
   report="${RESULTS_DIR}/${kf}"
+  outdir="${RESULTS_DIR}/${kf}"
+  mkdir -p "${outdir}"
 
   echo "[micro-bench] profiling kernel file = ${kf}"
 
   ncu --set full \
+      --target-processes all \
+      --profile-from-start yes \
+      --import-source yes \
+      --export "${report}" \
       --force-overwrite true \
-      --o "${report}" \
-       ./"${OUT}" \
-      --outdir "${RESULTS_DIR}" \
+      -- ./"${OUT}" \
+      --outdir "${outdir}" \
       --option profiling \
       --kernel-file "${kf}"
 done
