@@ -62,10 +62,10 @@ for kf in "${KERNEL_FILE_LIST[@]}"; do
   ncu --set full \
       --profile-from-start yes \
       --force-overwrite true \
+      --target-processes all \
       --o "${report}" \
       -- ./"${OUT}" \
       --outdir "${RESULTS_DIR}" \
       --option profiling \
       --kernel-file "${kf}"
-
 done
