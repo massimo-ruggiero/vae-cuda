@@ -69,7 +69,7 @@ EOF
 
   ncu --set full \
       --import-source yes \
-      --kernel-name "sgemm*|transpose*|add_*|leaky*|sigmoid*|bce_*|kl_*|adam_*" \
+      --kernel-name "regex:*_kernel" \
       --export "${report}" \
       ./"${runner}"
 
