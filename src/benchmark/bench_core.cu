@@ -78,7 +78,14 @@ float Timer::compute_ms(const std::function<void()>& launch,
     return median;
 }
 
-Csv::Csv(const char* path) {
+Csv::Csv(const char* path, bool enabled_) : enabled(enabled_) {
+    if (!enabled) return;
+
+    if (!path || path[0] == '\0') {
+        enabled = false;
+        return;
+    }
+
     f = std::fopen(path, "w");
     if (!f) {
         std::perror("fopen");
@@ -94,6 +101,8 @@ Csv::~Csv() {
 }
 
 void Csv::header(const DeviceSpecs& specs) {
+    if (!enabled) return;
+
     std::fprintf(f, "# peak_gflops_fp32=%.6f\n", specs.peak_gflops_fp32);
     std::fprintf(f, "# peak_bandwidth_gbps=%.6f\n", specs.peak_bandwidth_gbps);
     std::fprintf(f, "# ridge_point=%.6f\n", specs.ridge_point());
@@ -113,6 +122,8 @@ void Csv::row(const char* op,
               long long bytes, long long flops,
               const DeviceSpecs& specs)
 {
+    if (!enabled) return;
+
     // avoid div-by-zero
     const float seconds = (ms > 0.0f) ? (ms / 1e3f) : 0.0f;
 

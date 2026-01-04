@@ -46,7 +46,7 @@ private:
 
 class Csv {
 public:
-    explicit Csv(const char* path);
+    explicit Csv(const char* path, bool enabled = true);
     ~Csv();
 
     void header(const DeviceSpecs& specs);
@@ -59,6 +59,7 @@ public:
 
 private:
     FILE* f = nullptr;
+    bool enabled = false;
 };
 
 inline curandGenerator_t make_gen(unsigned long long seed){

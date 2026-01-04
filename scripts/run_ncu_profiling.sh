@@ -3,10 +3,10 @@ set -euo pipefail
 
 # Default: Colab T4
 ARCH="${ARCH:-sm_75}"
+OPTION="${OPTION:-profiling}"
 OUT="${OUT:-micro_bench}"
-OPTION="${OPTION:-benchmark}"
 
-RESULTS_DIR="${RESULTS_DIR:-results/micro_bench/csv}"
+RESULTS_DIR="${RESULTS_DIR:-results/micro_bench/ncu}"
 
 # Include paths
 INCLUDES=(
@@ -45,6 +45,9 @@ nvcc -arch="${ARCH}" \
      -lineinfo \
      -o "${OUT}"
 
-echo "[micro-bench] run: ./${OUT}"
-./"${OUT}" --outdir "${RESULTS_DIR}" \
-           --option "${OPTION}"
+echo "[micro-bench] run profiling on ./${OUT}"
+
+ncu --set full \
+    ./"${OUT}" \
+    --outdir "${RESULTS_DIR}" \
+    --option "${OPTION}"
