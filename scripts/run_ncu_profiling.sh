@@ -59,7 +59,7 @@ for kf in "${KERNEL_FILE_LIST[@]}"; do
 
   echo "[micro-bench] profiling kernel file = ${kf}"
 
-  runner="${outdir}/run_${kf}.sh"
+  runner="${RESULTS_DIR}/run_${kf}.sh"
   cat > "${runner}" <<EOF
 #!/usr/bin/env bash
 set -euo pipefail
