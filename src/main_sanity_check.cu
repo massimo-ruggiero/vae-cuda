@@ -76,14 +76,14 @@ int main(int argc, char** argv) {
     int epochs = 20;
     const char* data_path = "data/train.bin";
 
-    const std::string sname = to_string(s);
+    const std::string sname = to_string(config.strategy);
 
     try {
         std::filesystem::create_directories(outdir);
     } catch (const std::exception& e) {
         std::cerr << "[" << sname << "] ERROR: cannot create dir '" << outdir
                     << "': " << e.what() << "\n";
-        continue;
+        return 1;
     }
 
     MNISTLoader loader(data_path);
