@@ -69,6 +69,6 @@ EOF
 
   ncu --set full \
       --import-source yes \
-      --o "${report}" \
-      -- bash "${runner}"
+      --export "${report}" \
+      ./"${runner}"
 done
