@@ -70,10 +70,8 @@ EOF
   chmod +x "${runner}"
 
   ncu --set full \
-      --target-processes all \
-      --profile-from-start yes \
       --import-source yes \
-      --export "${report}" \
+      --o "${report}" \
       --force-overwrite true \
       -- "${runner}"
 done
