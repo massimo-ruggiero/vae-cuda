@@ -70,6 +70,5 @@ EOF
   ncu --set full \
       --import-source yes \
       --o "${report}" \
-      --force-overwrite true \
-      -- "${runner}"
+      -- bash "${runner}"
 done
