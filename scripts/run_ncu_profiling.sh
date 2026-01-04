@@ -69,7 +69,7 @@ EOF
 
   ncu --set full \
       --import-source yes \
-      --kernel-name "regex:*_kernel" \
+      --kernel-name "regex:.*_kernel" \
       --export "${report}" \
       ./"${runner}"
 
