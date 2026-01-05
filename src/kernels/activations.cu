@@ -29,10 +29,10 @@ __global__ void leaky_relu_forward_vec4_kernel(const float* Z,
         float4 Z_vec = *reinterpret_cast<const float4*>(&Z[idx]);
         float4 A_vec;
 
-        A_vec.x = (Z_vec.x > 0.0f) ? Z_vec.x : Z_vec.x * alpha;
-        A_vec.y = (Z_vec.y > 0.0f) ? Z_vec.y : Z_vec.y * alpha;
-        A_vec.z = (Z_vec.z > 0.0f) ? Z_vec.z : Z_vec.z * alpha;
-        A_vec.w = (Z_vec.w > 0.0f) ? Z_vec.w : Z_vec.w * alpha;
+        A_vec.x = fmaxf(Z_vec.x, alpha * Z_vec.x);
+        A_vec.y = fmaxf(Z_vec.y, alpha * Z_vec.y);
+        A_vec.z = fmaxf(Z_vec.z, alpha * Z_vec.z);
+        A_vec.w = fmaxf(Z_vec.w, alpha * Z_vec.w);
 
         *reinterpret_cast<float4*>(&A[idx]) = A_vec;
     } else if (idx < size){
@@ -65,10 +65,10 @@ __global__ void sigmoid_forward_vec4_kernel(const float* Z,
         float4 Z_vec = *reinterpret_cast<const float4*>(&Z[idx]);
         float4 A_vec;
 
-        A_vec.x = 1.0f / (1.0f + expf(-Z_vec.x));
-        A_vec.y = 1.0f / (1.0f + expf(-Z_vec.y));
-        A_vec.z = 1.0f / (1.0f + expf(-Z_vec.z));
-        A_vec.w = 1.0f / (1.0f + expf(-Z_vec.w));
+        A_vec.x = 1.0f / (1.0f + __expf(-Z_vec.x));
+        A_vec.y = 1.0f / (1.0f + __expf(-Z_vec.y));
+        A_vec.z = 1.0f / (1.0f + __expf(-Z_vec.z));
+        A_vec.w = 1.0f / (1.0f + __expf(-Z_vec.w));
     
         *reinterpret_cast<float4*>(&A[idx]) = A_vec;
     } else if (idx < size) {
@@ -107,10 +107,11 @@ __global__ void leaky_relu_backward_vec4_kernel(const float* Z,
         float4 dA_vec = *reinterpret_cast<const float4*>(&dA[idx]);
         float4 dZ_vec;
 
-        dZ_vec.x = (Z_vec.x > 0.0f) ? dA_vec.x : alpha * dA_vec.x;  // TODO: dA_vec.x * fmaxf(alpha, (float)(Z_vec.x > 0.0f));
-        dZ_vec.y = (Z_vec.y > 0.0f) ? dA_vec.y : alpha * dA_vec.y;
-        dZ_vec.z = (Z_vec.z > 0.0f) ? dA_vec.z : alpha * dA_vec.z;
-        dZ_vec.w = (Z_vec.w > 0.0f) ? dA_vec.w : alpha * dA_vec.w;
+        dZ_vec.x = dA_vec.x * fmaf((Z_vec.x > 0.0f), 1.0f - alpha, alpha);
+        dZ_vec.y = dA_vec.y * fmaf((Z_vec.y > 0.0f), 1.0f - alpha, alpha);
+        dZ_vec.z = dA_vec.z * fmaf((Z_vec.z > 0.0f), 1.0f - alpha, alpha);
+        dZ_vec.w = dA_vec.w * fmaf((Z_vec.w > 0.0f), 1.0f - alpha, alpha);
+
 
         *reinterpret_cast<float4*>(&dZ[idx]) = dZ_vec;
     } else if (idx < size) {
