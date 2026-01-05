@@ -6,7 +6,7 @@ ARCH="${ARCH:-sm_75}"
 OUT="${OUT:-micro_bench}"
 
 RESULTS_DIR="${RESULTS_DIR:-results/micro_bench/ncu}"
-KERNEL_FILES="${KERNEL_FILES:-linalg,activations,loss,reparam,optimizers}"
+KERNEL_FILES="${KERNEL_FILES:-linalg,linear,activations,loss,reparam,optimizers}"
 
 mkdir -p "${RESULTS_DIR}"
 
@@ -25,6 +25,7 @@ SRCS=(
   src/main_micro_bench.cu
   src/benchmark/bench_core.cu
   src/benchmark/bench_linalg.cu
+  src/benchmark/bench_linear.cu
   src/benchmark/bench_activations.cu
   src/benchmark/bench_loss.cu
   src/benchmark/bench_reparam.cu
@@ -32,6 +33,7 @@ SRCS=(
   src/buffers/layer_buffers.cu
   src/buffers/vae_buffers.cu
   src/kernels/linalg.cu
+  src/kernels/linear.cu
   src/kernels/activations.cu
   src/kernels/loss.cu
   src/kernels/optimizers.cu

@@ -41,12 +41,13 @@ static CliArgs parse_cli(int argc, char** argv) {
 
     if (args.kernel_file != "all" &&
         args.kernel_file != "linalg" &&
+        args.kernel_file != "linear" &&
         args.kernel_file != "activations" &&
         args.kernel_file != "loss" &&
         args.kernel_file != "reparam" &&
         args.kernel_file != "optimizers") {
         std::cerr << "[micro-bench] ERROR: unsupported kernel file '" << args.kernel_file
-                  << "'. Use one of: all, linalg, activations, loss, reparam, optimizers.\n";
+                  << "'. Use one of: all, linalg, linear, activations, loss, reparam, optimizers.\n";
         std::exit(1);
     }
 
@@ -119,6 +120,18 @@ int main(int argc, char** argv) {
         run_transpose(csv, gen, timer, config);
         run_add_in_place(csv, gen, timer, config);
         std::cout << "[Benchmark] ✅ Linalg done.\n";
+    }
+
+    // ====================
+    // LINEAR BENCHMARK
+    // ====================
+    if (should_run("linear", args.kernel_file)) {
+        std::cout << "\n[Benchmark] ⚙️ Linear...\n";
+        Csv csv(join_path(args.outdir, "bench_linear.csv").c_str(), write_csv);
+        csv.header();
+
+        run_add_bias(csv, gen, timer, config);
+        std::cout << "[Benchmark] ✅ Linear done.\n";
     }
 
     // ====================
