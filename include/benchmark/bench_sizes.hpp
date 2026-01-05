@@ -14,11 +14,11 @@ static constexpr SgemmSizes SGEMM_SIZES[] = {
 };
 
 static constexpr TransposeSizes TRANSPOSE_SIZES[] = {      
-    {65536, 65536},     
+    {32768, 32768},     
 };
 
 static constexpr AddBiasSizes ADD_BIAS_SIZES[] = {
-    {65536, 65536},
+    {32768, 32768},
 };
 
 static constexpr VecSizes VEC_SIZES[] = {
