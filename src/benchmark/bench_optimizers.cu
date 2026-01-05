@@ -7,8 +7,7 @@
 
 void run_adam_step(Csv& csv, curandGenerator_t gen, 
                    Timer& timer, 
-                   const BenchmarkConfig& config,
-                   const DeviceSpecs& specs) {
+                   const BenchmarkConfig& config) {
     VAEStrategy strategies[] = {
         VAEStrategy::NAIVE,
         VAEStrategy::VECTORIZED,
@@ -40,9 +39,7 @@ void run_adam_step(Csv& csv, curandGenerator_t gen,
             float ms = timer.compute_ms(launch, config, &std_ms);
             csv.row("adam_step", to_string(s), 
                     size, -1, -1, 
-                    ms, std_ms,
-                    bytes_adam_step(size), flops_adam_step(size),
-                    specs);
+                    ms, std_ms);
         }
     }
 }

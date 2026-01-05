@@ -7,8 +7,7 @@
 
 void run_sgemm(Csv& csv, curandGenerator_t gen, 
                Timer& timer, 
-               const BenchmarkConfig& config,
-               const DeviceSpecs& specs) {
+               const BenchmarkConfig& config) {
     VAEStrategy strategies[] = {
         VAEStrategy::NAIVE,
         VAEStrategy::TILING,
@@ -47,17 +46,14 @@ void run_sgemm(Csv& csv, curandGenerator_t gen,
             float ms = timer.compute_ms(launch, config, &std_ms);
             csv.row("sgemm", to_string(s), 
                     M, K, N, 
-                    ms, std_ms,
-                    bytes_sgemm(M, K, N), flops_sgemm(M, K, N),
-                    specs);
+                    ms, std_ms);
         }
     }
 }
 
 void run_transpose(Csv& csv, curandGenerator_t gen, 
                    Timer& timer, 
-                   const BenchmarkConfig& config,
-                   const DeviceSpecs& specs) {
+                   const BenchmarkConfig& config) {
     VAEStrategy strategies[] = {
         VAEStrategy::NAIVE,
         VAEStrategy::TILING,
@@ -88,17 +84,14 @@ void run_transpose(Csv& csv, curandGenerator_t gen,
             float ms = timer.compute_ms(launch, config, &std_ms);
             csv.row("transpose", to_string(s), 
                     M, N, -1, 
-                    ms, std_ms,
-                    bytes_transpose(M, N), flops_transpose(M, N),
-                    specs);
+                    ms, std_ms);
         }
     }
 }
 
 void run_add_in_place(Csv& csv, curandGenerator_t gen, 
                       Timer& timer, 
-                      const BenchmarkConfig& config,
-                      const DeviceSpecs& specs) {
+                      const BenchmarkConfig& config) {
     VAEStrategy strategies[] = {
         VAEStrategy::NAIVE,
         VAEStrategy::VECTORIZED,
@@ -126,9 +119,7 @@ void run_add_in_place(Csv& csv, curandGenerator_t gen,
             float ms = timer.compute_ms(launch, config, &std_ms);
             csv.row("add_in_place", to_string(s), 
                     size, -1, -1, 
-                    ms, std_ms,
-                    bytes_add_inplace(size), flops_add_inplace(size),
-                    specs);
+                    ms, std_ms);
         }
     }
 }

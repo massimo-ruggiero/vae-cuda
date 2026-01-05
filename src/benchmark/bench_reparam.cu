@@ -7,8 +7,7 @@
 
 void run_reparam_forward(Csv& csv, curandGenerator_t gen, 
                          Timer& timer, 
-                         const BenchmarkConfig& config,
-                         const DeviceSpecs& specs) {
+                         const BenchmarkConfig& config) {
     VAEStrategy strategies[] = {
         VAEStrategy::NAIVE,
         VAEStrategy::VECTORIZED,
@@ -44,9 +43,7 @@ void run_reparam_forward(Csv& csv, curandGenerator_t gen,
             float ms = timer.compute_ms(launch, config, &std_ms);
             csv.row("reparam_forward", to_string(s), 
                     size, -1, -1, 
-                    ms, std_ms,
-                    bytes_reparametrization_forward(size), flops_reparametrization_forward(size),
-                    specs);
+                    ms, std_ms);
 
             CUDA_CHECK(cudaFree(d_states));
         }
@@ -55,8 +52,7 @@ void run_reparam_forward(Csv& csv, curandGenerator_t gen,
 
 void run_reparam_backward(Csv& csv, curandGenerator_t gen, 
                           Timer& timer, 
-                          const BenchmarkConfig& config,
-                          const DeviceSpecs& specs) {
+                          const BenchmarkConfig& config) {
     VAEStrategy strategies[] = {
         VAEStrategy::NAIVE,
         VAEStrategy::VECTORIZED,
@@ -97,9 +93,7 @@ void run_reparam_backward(Csv& csv, curandGenerator_t gen,
             float ms = timer.compute_ms(launch, config, &std_ms);
             csv.row("reparam_backward", to_string(s), 
                     size, -1, -1, 
-                    ms, std_ms,
-                    bytes_reparametrization_backward(size), flops_reparametrization_backward(size),
-                    specs);
+                    ms, std_ms);
 
             CUDA_CHECK(cudaFree(d_states));
         }

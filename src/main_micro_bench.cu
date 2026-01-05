@@ -98,7 +98,6 @@ int main(int argc, char** argv) {
     curandGenerator_t gen = make_gen(1234ULL);
     Timer timer;
 
-    DeviceSpecs specs = DeviceSpecs::detect();
     std::cout << "\n🚀 Launching micro benchmark (" << args.option << ")...\n";
     if (args.kernel_file != "all") {
         std::cout << "Running kernel file: " << args.kernel_file << "\n";
@@ -114,11 +113,11 @@ int main(int argc, char** argv) {
     if (should_run("linalg", args.kernel_file)) {
         std::cout << "\n[Benchmark] ⚙️ Linalg...\n";
         Csv csv(join_path(args.outdir, "bench_linalg.csv").c_str(), write_csv);
-        csv.header(specs);
+        csv.header();
 
-        run_sgemm(csv, gen, timer, config, specs);
-        run_transpose(csv, gen, timer, config, specs);
-        run_add_in_place(csv, gen, timer, config, specs);
+        run_sgemm(csv, gen, timer, config);
+        run_transpose(csv, gen, timer, config);
+        run_add_in_place(csv, gen, timer, config);
         std::cout << "[Benchmark] ✅ Linalg done.\n";
     }
 
@@ -128,12 +127,12 @@ int main(int argc, char** argv) {
     if (should_run("activations", args.kernel_file)) {
         std::cout << "\n[Benchmark] ⚙️ Activations...\n";
         Csv csv(join_path(args.outdir, "bench_activations.csv").c_str(), write_csv);
-        csv.header(specs);
+        csv.header();
 
-        run_leaky_relu_forward(csv, gen, timer, config, specs);
-        run_leaky_relu_backward(csv, gen, timer, config, specs);
-        run_sigmoid_forward(csv, gen, timer, config, specs);
-        run_sigmoid_backward(csv, gen, timer, config, specs);
+        run_leaky_relu_forward(csv, gen, timer, config);
+        run_leaky_relu_backward(csv, gen, timer, config);
+        run_sigmoid_forward(csv, gen, timer, config);
+        run_sigmoid_backward(csv, gen, timer, config);
         std::cout << "[Benchmark] ✅ Activations done.\n";
     }
 
@@ -143,11 +142,11 @@ int main(int argc, char** argv) {
     if (should_run("loss", args.kernel_file)) {
         std::cout << "\n[Benchmark] ⚙️ Loss...\n";
         Csv csv(join_path(args.outdir, "bench_loss.csv").c_str(), write_csv);
-        csv.header(specs);
+        csv.header();
 
-        run_loss_forward(csv, gen, timer, config, specs);
-        run_bce_backward(csv, gen, timer, config, specs);
-        run_kl_backward(csv, gen, timer, config, specs);
+        run_loss_forward(csv, gen, timer, config);
+        run_bce_backward(csv, gen, timer, config);
+        run_kl_backward(csv, gen, timer, config);
         std::cout << "[Benchmark] ✅ Loss done.\n";
     }
 
@@ -157,10 +156,10 @@ int main(int argc, char** argv) {
     if (should_run("reparam", args.kernel_file)) {
         std::cout << "\n[Benchmark] ⚙️ Reparametrization...\n";
         Csv csv(join_path(args.outdir, "bench_reparam.csv").c_str(), write_csv);
-        csv.header(specs);
+        csv.header();
 
-        run_reparam_forward(csv, gen, timer, config, specs);
-        run_reparam_backward(csv, gen, timer, config, specs);
+        run_reparam_forward(csv, gen, timer, config);
+        run_reparam_backward(csv, gen, timer, config);
         std::cout << "[Benchmark] ✅ Reparametrization done.\n";
     }
 
@@ -170,9 +169,9 @@ int main(int argc, char** argv) {
     if (should_run("optimizers", args.kernel_file)) {
         std::cout << "\n[Benchmark] ⚙️ Optimizers...\n";
         Csv csv(join_path(args.outdir, "bench_optimizers.csv").c_str(), write_csv);
-        csv.header(specs);
+        csv.header();
 
-        run_adam_step(csv, gen, timer, config, specs);
+        run_adam_step(csv, gen, timer, config);
         std::cout << "[Benchmark] ✅ Optimizers done.\n";
     }
 

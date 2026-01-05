@@ -8,8 +8,7 @@
 
 void run_loss_forward(Csv& csv, curandGenerator_t gen, 
                       Timer& timer, 
-                      const BenchmarkConfig& config,
-                      const DeviceSpecs& specs) {
+                      const BenchmarkConfig& config) {
     VAEStrategy strategies[] = {
         VAEStrategy::NAIVE,
         VAEStrategy::REDUCTION,
@@ -57,18 +56,14 @@ void run_loss_forward(Csv& csv, curandGenerator_t gen,
             float ms = timer.compute_ms(launch, config, &std_ms);
             csv.row("loss_forward", to_string(s), 
                     batch, input_dim, latent_dim, 
-                    ms, std_ms,
-                    bytes_bce_forward(size_bce) + bytes_kl_forward(size_kl),
-                    flops_bce_forward(size_bce) + flops_kl_forward(size_kl),
-                    specs);
+                    ms, std_ms);
         }
     }
 }
 
 void run_bce_backward(Csv& csv, curandGenerator_t gen, 
                       Timer& timer, 
-                      const BenchmarkConfig& config,
-                      const DeviceSpecs& specs) {
+                      const BenchmarkConfig& config) {
     VAEStrategy strategies[] = {
         VAEStrategy::NAIVE,
         VAEStrategy::VECTORIZED,
@@ -97,17 +92,14 @@ void run_bce_backward(Csv& csv, curandGenerator_t gen,
             float ms = timer.compute_ms(launch, config, &std_ms);
             csv.row("bce_backward", to_string(s), 
                     size, -1, -1, 
-                    ms, std_ms,
-                    bytes_bce_backward(size), flops_bce_backward(size),
-                    specs);
+                    ms, std_ms);
         }
     }
 }
 
 void run_kl_backward(Csv& csv, curandGenerator_t gen, 
                      Timer& timer, 
-                     const BenchmarkConfig& config,
-                     const DeviceSpecs& specs) {
+                     const BenchmarkConfig& config) {
     VAEStrategy strategies[] = {
         VAEStrategy::NAIVE,
         VAEStrategy::VECTORIZED,
@@ -137,9 +129,7 @@ void run_kl_backward(Csv& csv, curandGenerator_t gen,
             float ms = timer.compute_ms(launch, config, &std_ms);
             csv.row("kl_backward", to_string(s), 
                     size, -1, -1, 
-                    ms, std_ms,
-                    bytes_kl_backward(size), flops_kl_backward(size),
-                    specs);
+                    ms, std_ms);
         }
     }
 }
