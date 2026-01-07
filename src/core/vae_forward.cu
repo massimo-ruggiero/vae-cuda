@@ -3,6 +3,7 @@
 #include "linear.cuh"
 #include "activations.cuh"
 #include "reparametrization.cuh"
+#include "fused.cuh"
 
 
 namespace vae {
@@ -106,4 +107,4 @@ namespace vae {
         decoder_pass(buf);
     }
 
-}
+} // namespace vae 

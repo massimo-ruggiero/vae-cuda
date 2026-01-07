@@ -10,4 +10,4 @@ namespace vae {
     
     void forward(VAEBuffers& buf);
 
-}
+} // namespace vae

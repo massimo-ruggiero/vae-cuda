@@ -44,7 +44,6 @@ __global__ void add_bias_vec4_kernel(float* __restrict__ Z,
     }
 }
 
-
 // ==============================
 // Kernels: db
 // ==============================     
