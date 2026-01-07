@@ -51,6 +51,10 @@ void run_reparam_forward(Csv& csv, curandGenerator_t gen,
                          Timer& timer, 
                          const BenchmarkConfig& config);
 
+void run_reparam_init(Csv& csv, curandGenerator_t gen, 
+                      Timer& timer, 
+                      const BenchmarkConfig& config);
+
 void run_reparam_backward(Csv& csv, curandGenerator_t gen, 
                           Timer& timer, 
                           const BenchmarkConfig& config);

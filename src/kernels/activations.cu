@@ -178,7 +178,7 @@ namespace activations {
                      float d_alpha,
                      int size,
                      const VAEStrategy& strategy) {
-            const int blockSize = 256;
+            const int blockSize = 512;
             int gridSize;
             switch(strategy) {
                 case VAEStrategy::NAIVE:
@@ -209,7 +209,7 @@ namespace activations {
                       float d_alpha,
                       int size,
                       const VAEStrategy& strategy) {
-            const int blockSize = 256;
+            const int blockSize = 512;
             int gridSize;
             switch(strategy) {
                 case VAEStrategy::NAIVE:
@@ -242,7 +242,7 @@ namespace activations {
                      float* d_A,
                      int size, 
                      const VAEStrategy& strategy) {
-            const int blockSize = 256;
+            const int blockSize = 512;
             int gridSize;
             switch(strategy) {
                 case VAEStrategy::VECTORIZED:
@@ -265,7 +265,7 @@ namespace activations {
                       float* d_dZ, 
                       int size, 
                       const VAEStrategy& strategy) {
-            const int blockSize = 256;
+            const int blockSize = 512;
             int gridSize;
             switch(strategy) {
                 case VAEStrategy::NAIVE:

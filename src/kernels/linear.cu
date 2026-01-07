@@ -163,7 +163,7 @@ namespace linear {
         linalg::sgemm(d_XT, d_dZ, d_dW, input_dim, batch_size, output_dim, strategy);
 
         // d_db
-        const int blockSize = 256;
+        const int blockSize = 512;
         const int gridSize = (output_dim + blockSize - 1) / blockSize;
         
         DEBUG("Launching db_naive_kernel...");

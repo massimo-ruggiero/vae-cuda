@@ -144,7 +144,7 @@ namespace reparametrization {
               int num_states, 
               unsigned long long seed,
               const VAEStrategy& strategy) {
-        const int blockSize = 256;
+        const int blockSize = 512;
         int gridSize;
 
         switch(strategy) {
@@ -177,7 +177,7 @@ namespace reparametrization {
                     int size,
                     const VAEStrategy& strategy) {
 
-        const int blockSize = 256;
+        const int blockSize = 512;
         int gridSize;
 
         switch(strategy) {
@@ -210,7 +210,7 @@ namespace reparametrization {
                   float* d_dlogvar,
                   int size,
                   const VAEStrategy& strategy) {
-        const int blockSize = 256;
+        const int blockSize = 512;
         int gridSize;
 
         switch(strategy) {

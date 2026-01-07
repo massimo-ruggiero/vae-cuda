@@ -126,7 +126,7 @@ namespace optimizers {
                   float beta1,
                   float beta2,
                   float epsilon) {
-            const int blockSize = 256;
+            const int blockSize = 512;
             int gridSize;
 
             float inv_bc1 = 1.0f / (1.0f - powf(beta1, (float)t)); 

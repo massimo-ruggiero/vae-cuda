@@ -171,6 +171,7 @@ int main(int argc, char** argv) {
         Csv csv(join_path(args.outdir, "bench_reparam.csv").c_str(), write_csv);
         csv.header();
 
+        run_reparam_init(csv, gen, timer, config);
         run_reparam_forward(csv, gen, timer, config);
         run_reparam_backward(csv, gen, timer, config);
         std::cout << "[Benchmark] ✅ Reparametrization done.\n";

@@ -463,7 +463,7 @@ namespace loss {
                  int output_dim,
                  const VAEStrategy& strategy,
                  float beta) {
-        const int blockSize = 256;
+        const int blockSize = 512;
         const int size_bce = batch_size * input_dim;
         const int size_kl = batch_size * output_dim;
         int gridSize_bce;
@@ -556,7 +556,7 @@ namespace loss {
                      int batch_size,
                      int input_dim,
                      const VAEStrategy& strategy) {
-        const int blockSize = 256;
+        const int blockSize = 512;
         const int size_bce = batch_size * input_dim;
         const float inv_batch = 1.0f / (float)batch_size;
         int gridSize_bce;
@@ -604,7 +604,7 @@ namespace loss {
                     int batch_size,
                     int latent_dim,
                     const VAEStrategy& strategy) {
-        const int blockSize = 256;
+        const int blockSize = 512;
         const int size_kl = batch_size * latent_dim;
         const float inv_batch = 1.0f / (float)batch_size;
         int gridSize_kl;
@@ -653,7 +653,7 @@ namespace loss {
                  float* d_dA,
                  int size,
                  const VAEStrategy& strategy) {
-            const int blockSize = 256;
+            const int blockSize = 512;
             int gridSize;
 
             switch(strategy) {
@@ -681,7 +681,7 @@ namespace loss {
                 int size,
                 const VAEStrategy& strategy,
                 float beta) {
-            const int blockSize = 256;
+            const int blockSize = 512;
             int gridSize;
 
             switch(strategy) {

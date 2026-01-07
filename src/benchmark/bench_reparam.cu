@@ -50,6 +50,42 @@ void run_reparam_forward(Csv& csv, curandGenerator_t gen,
     }
 }
 
+void run_reparam_init(Csv& csv, curandGenerator_t gen, 
+                      Timer& timer, 
+                      const BenchmarkConfig& config) {
+    VAEStrategy strategies[] = {
+        VAEStrategy::NAIVE,
+        VAEStrategy::VECTORIZED,
+    };
+
+    (void)gen;
+
+    for (VAEStrategy s : strategies) {
+        for (auto t : VEC_SIZES) {
+            int size = t.size;
+            int num_states = (s == VAEStrategy::VECTORIZED) ? ((size + 3) / 4) : size;
+
+            std::cout << "[Reparam] Init benchmark: strategy = " << to_string(s)
+                      << " size = " << size << std::endl;
+
+            curandStatePhilox4_32_10_t* d_states = nullptr;
+            CUDA_CHECK(cudaMalloc(&d_states, num_states * sizeof(curandStatePhilox4_32_10_t)));
+
+            auto launch = [&](){
+                reparametrization::init(d_states, num_states, 1234ULL, s);
+            };
+
+            float mad_ms = 0.0f;
+            float ms = timer.compute_ms(launch, config, &mad_ms);
+            csv.row("reparam_init", to_string(s), 
+                    size, -1, -1, 
+                    ms, mad_ms);
+
+            CUDA_CHECK(cudaFree(d_states));
+        }
+    }
+}
+
 void run_reparam_backward(Csv& csv, curandGenerator_t gen, 
                           Timer& timer, 
                           const BenchmarkConfig& config) {

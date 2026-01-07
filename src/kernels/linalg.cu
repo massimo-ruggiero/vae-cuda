@@ -407,7 +407,7 @@ namespace linalg {
                       const float* d_B, 
                       int size,
                       const VAEStrategy& strategy) {
-        const int blockSize = 256;
+        const int blockSize = 512;
         int gridSize;
         switch(strategy) {
             case VAEStrategy::NAIVE:
