@@ -44,16 +44,16 @@ int main(int argc, char** argv) {
                   << " iters=" << config.iters << "\n";
 
         auto launch_sep_lrelu = [&]() {
-            linear::forward(X.ptr, W.ptr, b.ptr, Z.ptr, M, K, N, VAEStrategy::OPTIMIZED);
-            activations::leaky_relu::forward(Z.ptr, A_lrelu.ptr, 0.2f, M * N, VAEStrategy::OPTIMIZED);
+            linear::forward(X.ptr, W.ptr, b.ptr, Z.ptr, M, K, N, VAEStrategy::NAIVE);
+            activations::leaky_relu::forward(Z.ptr, A_lrelu.ptr, 0.2f, M * N, VAEStrategy::NAIVE);
         };
         auto launch_fused_lrelu = [&]() {
             fused::forward::linear_lrelu_tc(X.ptr, W.ptr, b.ptr, A_lrelu.ptr, M, K, N, 0.2f);
         };
 
         auto launch_sep_sigmoid = [&]() {
-            linear::forward(X.ptr, W.ptr, b.ptr, Z.ptr, M, K, N, VAEStrategy::OPTIMIZED);
-            activations::sigmoid::forward(Z.ptr, A_sigmoid.ptr, M * N, VAEStrategy::OPTIMIZED);
+            linear::forward(X.ptr, W.ptr, b.ptr, Z.ptr, M, K, N, VAEStrategy::NAIVE);
+            activations::sigmoid::forward(Z.ptr, A_sigmoid.ptr, M * N, VAEStrategy::NAIVE);
         };
         auto launch_fused_sigmoid = [&]() {
             fused::forward::linear_sigmoid_tc(X.ptr, W.ptr, b.ptr, A_sigmoid.ptr, M, K, N);
