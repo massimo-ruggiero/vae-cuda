@@ -3,7 +3,7 @@
 
 #include <cuda_runtime.h>
 
-static constexpr int TILE_DIM = 16;
+static constexpr int TILE_DIM = 32;
 static constexpr int COARSE_FACTOR = 4;
 
 
