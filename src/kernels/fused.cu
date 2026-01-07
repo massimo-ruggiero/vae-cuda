@@ -57,7 +57,7 @@ __global__ void linear_lrelu_wmma_kernel(const float* __restrict__ X,
     for (int k0 = 0; k0 < K; k0 += TILE_DIM) {
 
         #pragma unroll
-        for (int i = 0; i < VALUES_PER_THREAD; ++i) {
+        for (int step = 0; step < TILE_ELEMENTS; step += WARP_SIZE) {
             const int t = lane_id * VALUES_PER_THREAD + i;
             const int r = t / TILE_DIM;
             const int c = t % TILE_DIM;
@@ -98,9 +98,9 @@ __global__ void linear_lrelu_wmma_kernel(const float* __restrict__ X,
     __syncwarp();
 
     #pragma unroll
-    for (int i = 0; i < VALUES_PER_THREAD; ++i) {
+    for (int step = 0; step < TILE_ELEMENTS; step += WARP_SIZE) {
 
-        const int t = lane_id * VALUES_PER_THREAD + i;
+        const int t = step + lane_id;
         const int r = t / TILE_DIM;
         const int c = t % TILE_DIM;
 
