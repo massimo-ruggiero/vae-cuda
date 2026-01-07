@@ -1,5 +1,7 @@
 #include <iomanip>
 #include <iostream>
+#include <string>
+#include <filesystem>
 
 #include "bench_core.cuh"
 #include "bench_sizes.hpp"
@@ -8,14 +10,74 @@
 #include "activations.cuh"
 #include "layer_buffers.cuh"
 
-int main(int argc, char** argv) {
+struct CliArgs {
+    std::string outdir;
+    std::string option;
+};
+
+static CliArgs parse_cli(int argc, char** argv) {
+    CliArgs args{
+        .outdir = "",
+        .option = "benchmark"
+    };
+    for (int i = 1; i < argc; ++i) {
+        std::string arg(argv[i]);
+        if (arg == "--outdir" && i + 1 < argc) {
+            args.outdir = argv[i + 1];
+        } else if (arg == "--option" && i + 1 < argc) {
+            args.option = argv[i + 1];
+        }
+    }
+
+    if (args.option != "benchmark" && args.option != "profiling") {
+        std::cerr << "[fused-micro-bench] ERROR: unsupported option '" << args.option
+                  << "'. Use 'benchmark' or 'profiling'.\n";
+        std::exit(1);
+    }
+
+    if (args.outdir.empty()) {
+        args.outdir = (args.option == "profiling")
+            ? "results/micro_bench/ncu"
+            : "results/micro_bench/csv";
+    }
+
+    return args;
+}
+
+static BenchmarkConfig make_config(const std::string& option) {
     BenchmarkConfig config{};
-    config.warmup_iters = 5;
-    config.iters = 50;
+    if (option == "profiling") {
+        config.warmup_iters = 0;
+        config.iters = 1;
+    } else {
+        config.warmup_iters = 5;
+        config.iters = 50;
+    }
+    return config;
+}
+
+int main(int argc, char** argv) {
+    const CliArgs args = parse_cli(argc, argv);
+
+    try {
+        std::filesystem::create_directories(args.outdir);
+    } catch (const std::exception& e) {
+        std::cerr << "[fused-micro-bench] ERROR: cannot create outdir '" << args.outdir
+                  << "': " << e.what() << "\n";
+        return 1;
+    }
+
+    BenchmarkConfig config = make_config(args.option);
 
     curandGenerator_t gen = make_gen(1234ULL);
     Timer timer;
     std::cout << std::fixed << std::setprecision(4);
+
+    std::cout << "\n🚀 Launching fused micro benchmark (" << args.option << ")...\n";
+    if (args.option == "profiling") {
+        std::cout << "Running with no warmup and a single iteration per kernel.\n";
+    }
+    std::cout << "---------------------------------\n";
 
     for (auto t : SGEMM_SIZES) {
         const int M = t.M;
@@ -41,7 +103,8 @@ int main(int argc, char** argv) {
                   << " K=" << K
                   << " N=" << N
                   << " warmup=" << config.warmup_iters
-                  << " iters=" << config.iters << "\n";
+                  << " iters=" << config.iters
+                  << " option=" << args.option << "\n";
 
         auto launch_sep_lrelu = [&]() {
             linear::forward(X.ptr, W.ptr, b.ptr, Z.ptr, M, K, N, VAEStrategy::NAIVE);

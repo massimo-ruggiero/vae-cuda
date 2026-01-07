@@ -45,7 +45,7 @@ runner="${RESULTS_DIR}/run_fused_micro_bench.sh"
 cat > "${runner}" <<EOF
 #!/usr/bin/env bash
 set -euo pipefail
-"$(pwd)/${OUT}"
+"$(pwd)/${OUT}" --option profiling
 EOF
 chmod +x "${runner}"
 
