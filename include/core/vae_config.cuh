@@ -13,7 +13,8 @@ enum class VAEStrategy {
     UNROLLED_REDUCTION,
     WARP_REDUCTION,
     VECTORIZED,
-    OPTIMIZED
+    OPTIMIZED,
+    KERNEL_FUSION
 };
 
 inline const char* to_string(VAEStrategy s) {
@@ -26,6 +27,7 @@ inline const char* to_string(VAEStrategy s) {
         case VAEStrategy::WARP_REDUCTION:     return "WARP_REDUCTION";
         case VAEStrategy::VECTORIZED:         return "VECTORIZED";
         case VAEStrategy::OPTIMIZED:          return "OPTIMIZED";
+        case VAEStrategy::KERNEL_FUSION:      return "KERNEL_FUSION";
         default:                              return "Unknown";
     }
 }
@@ -54,6 +56,8 @@ inline bool parse_strategy(const std::string& name,
         out = VAEStrategy::VECTORIZED;
     } else if (s == "OPTIMIZED") {
         out = VAEStrategy::OPTIMIZED;
+    } else if (s == "KERNEL_FUSION") {
+        out = VAEStrategy::KERNEL_FUSION;
     } else {
         return false;
     }
