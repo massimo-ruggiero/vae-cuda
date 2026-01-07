@@ -3,7 +3,6 @@
 #include "linear.cuh"
 #include "activations.cuh"
 #include "reparametrization.cuh"
-#include "fused.cuh"
 
 
 namespace vae {
@@ -15,31 +14,20 @@ namespace vae {
         int latent_dim = buf.config.latent_dim;
         VAEStrategy strategy = buf.config.strategy;
 
-        if (strategy == VAEStrategy::KERNEL_FUSION) {
-            fused::forward::linear_lrelu_tc(buf.d_X.ptr,
-                                            buf.enc1.W.ptr,
-                                            buf.enc1.b.ptr,
+        linear::forward(buf.d_X.ptr,
+                        buf.enc1.W.ptr,
+                        buf.enc1.b.ptr,
+                        buf.enc1.Z.ptr,
+                        batch_size,
+                        input_dim,
+                        hidden_dim,
+                        strategy);
+        
+        activations::leaky_relu::forward(buf.enc1.Z.ptr,
                                             buf.enc1.A.ptr,
-                                            batch_size,
-                                            input_dim,
-                                            hidden_dim,
-                                            0.2f);
-        } else {
-            linear::forward(buf.d_X.ptr,
-                            buf.enc1.W.ptr,
-                            buf.enc1.b.ptr,
-                            buf.enc1.Z.ptr,
-                            batch_size,
-                            input_dim,
-                            hidden_dim,
-                            strategy);
-            
-            activations::leaky_relu::forward(buf.enc1.Z.ptr,
-                                                buf.enc1.A.ptr,
-                                                0.2f,
-                                                batch_size * hidden_dim,
-                                                strategy);
-        }
+                                            0.2f,
+                                            batch_size * hidden_dim,
+                                            strategy);
 
         linear::forward(buf.enc1.A.ptr,
                         buf.enc2_mu.W.ptr,
@@ -67,55 +55,34 @@ namespace vae {
         int latent_dim = buf.config.latent_dim;
         VAEStrategy strategy = buf.config.strategy;
         
-        if (strategy == VAEStrategy::KERNEL_FUSION) {
-            fused::forward::linear_lrelu_tc(buf.d_z.ptr,
-                                            buf.dec1.W.ptr,
-                                            buf.dec1.b.ptr,
+        linear::forward(buf.d_z.ptr,
+                        buf.dec1.W.ptr,
+                        buf.dec1.b.ptr,
+                        buf.dec1.Z.ptr,
+                        batch_size,
+                        latent_dim,
+                        hidden_dim,
+                        strategy);
+        
+        activations::leaky_relu::forward(buf.dec1.Z.ptr,
                                             buf.dec1.A.ptr,
-                                            batch_size,
-                                            latent_dim,
-                                            hidden_dim,
-                                            0.2f);
-        } else {
-            linear::forward(buf.d_z.ptr,
-                            buf.dec1.W.ptr,
-                            buf.dec1.b.ptr,
-                            buf.dec1.Z.ptr,
-                            batch_size,
-                            latent_dim,
-                            hidden_dim,
-                            strategy);
-            
-            activations::leaky_relu::forward(buf.dec1.Z.ptr,
-                                                buf.dec1.A.ptr,
-                                                0.2f,
-                                                batch_size * hidden_dim,
-                                                strategy);
-        }
-
-        if (strategy == VAEStrategy::KERNEL_FUSION) {
-            fused::forward::linear_sigmoid_tc(buf.dec1.A.ptr,
-                                              buf.dec2.W.ptr,
-                                              buf.dec2.b.ptr,
-                                              buf.d_X_hat.ptr,
-                                              batch_size,
-                                              hidden_dim,
-                                              input_dim);
-        } else {
-            linear::forward(buf.dec1.A.ptr,
-                            buf.dec2.W.ptr,
-                            buf.dec2.b.ptr,
-                            buf.dec2.Z.ptr,
-                            batch_size,
-                            hidden_dim,
-                            input_dim,
-                            strategy);
-
-            activations::sigmoid::forward(buf.dec2.Z.ptr,
-                                            buf.d_X_hat.ptr,
-                                            batch_size * input_dim,
+                                            0.2f,
+                                            batch_size * hidden_dim,
                                             strategy);
-        }
+
+        linear::forward(buf.dec1.A.ptr,
+                        buf.dec2.W.ptr,
+                        buf.dec2.b.ptr,
+                        buf.dec2.Z.ptr,
+                        batch_size,
+                        hidden_dim,
+                        input_dim,
+                        strategy);
+
+        activations::sigmoid::forward(buf.dec2.Z.ptr,
+                                        buf.d_X_hat.ptr,
+                                        batch_size * input_dim,
+                                        strategy);
     }
 
     void forward(VAEBuffers& buf) {

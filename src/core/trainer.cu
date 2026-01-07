@@ -1,5 +1,6 @@
 #include "trainer.cuh"
 
+#include <algorithm>
 #include <cstdio>
 #include <iomanip>
 #include <iostream>
@@ -65,18 +66,19 @@ void Trainer::fit(int epochs) {
         double seconds = static_cast<double>(ms) / 1000.0;
         epoch_times.push_back(seconds);
 
-        std::cout << "[Trainer] Epoch " << (epoch + 1) << "/" << epochs
-                  << " | avg_loss = " << std::fixed << std::setprecision(4) << avg_loss
-                  << " | time = " << std::setprecision(3) << seconds << " s\n";
+        (void)avg_loss;
     }
 
     cudaEventDestroy(start);
     cudaEventDestroy(end);
 
     double summed = std::accumulate(epoch_times.begin(), epoch_times.end(), 0.0);
+    std::vector<double> times_sorted = epoch_times;
+    std::sort(times_sorted.begin(), times_sorted.end());
+    double median = times_sorted[times_sorted.size() / 2];
 
     std::cout << "---------------------------------\n";
-    std::cout << "[Trainer] ✅ Training completed in "
+    std::cout << "[Trainer] ✅ Total time = "
               << std::fixed << std::setprecision(2) << summed
-              << " seconds (sum of epochs).\n";
+              << " s | median/epoch = " << std::setprecision(3) << median << " s\n";
 }
