@@ -17,6 +17,20 @@ namespace loss {
                  const VAEStrategy& strategy,
                  float beta = 1.0f);
 
+    void forward_bce(const float* d_X,
+                     const float* d_Z,
+                     float* d_bce,
+                     int batch_size,
+                     int input_dim,
+                     const VAEStrategy& strategy);
+
+    void forward_kl(const float* d_mu,
+                    const float* d_logvar,
+                    float* d_kl,
+                    int batch_size,
+                    int latent_dim,
+                    const VAEStrategy& strategy);
+
     namespace backward {
 
         void bce(const float* d_X,

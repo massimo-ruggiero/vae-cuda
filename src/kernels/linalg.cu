@@ -245,6 +245,54 @@ __global__ void transpose_padding_kernel(const float* __restrict__ A,
     }
 } 
 
+__global__ void transpose_vec4_kernel(const float* __restrict__ A,
+                                      float* __restrict__ AT,
+                                      int M, int N) {
+    int idx = threadIdx.x * 4;
+    int row = blockIdx.y * blockDim.y + threadIdx.y;
+    int col = (blockIdx.x * blockDim.x) * 4 + idx;
+
+    __shared__ float A_tile[TILE_DIM][TILE_DIM + 1];
+
+    // load tile into shared memory
+    if (row < M){
+        if (col + 3 < N) {
+            float4 A_vec = *reinterpret_cast<const float4*>(&A[row * N + col]);
+            A_tile[threadIdx.y][idx + 0] = A_vec.x;
+            A_tile[threadIdx.y][idx + 1] = A_vec.y;
+            A_tile[threadIdx.y][idx + 2] = A_vec.z;
+            A_tile[threadIdx.y][idx + 3] = A_vec.w;
+        } else if (col < N) {
+            for (int i = 0; i < 4; ++i) {
+                int current_col = col + i;
+                if (current_col < N) A_tile[threadIdx.y][idx + i] = A[row * N + current_col];
+            }
+        } 
+    }
+    __syncthreads();
+
+    int row_t = (blockIdx.x * blockDim.x) * 4 + threadIdx.y;
+    int col_t = (blockIdx.y * blockDim.y) * 4 + idx;
+
+    if (row_t < N) {
+        if (col_t + 3 < M) {
+            float4 tile_vec = make_float4(
+                                A_tile[idx + 0][threadIdx.y],
+                                A_tile[idx + 1][threadIdx.y],
+                                A_tile[idx + 2][threadIdx.y],
+                                A_tile[idx + 3][threadIdx.y]
+                            );
+
+            *reinterpret_cast<float4*>(&AT[row_t * M + col_t]) = tile_vec;
+        } else if (col_t < M) {
+            for (int i = 0; i < 4; ++i) {
+                int current_col = col_t + i;
+                if (current_col < M) AT[row_t * M + current_col] = A_tile[idx + i][threadIdx.y];
+            }
+        }
+    }
+} 
+
 
 // ==============================
 // Kernels: Add inplace

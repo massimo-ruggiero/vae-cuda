@@ -39,11 +39,11 @@ void run_reparam_forward(Csv& csv, curandGenerator_t gen,
                 reparametrization::forward(mu.ptr, logvar.ptr, z.ptr, epsilon.ptr, d_states, size, s);
             };
 
-            float std_ms = 0.0f;
-            float ms = timer.compute_ms(launch, config, &std_ms);
+            float mad_ms = 0.0f;
+            float ms = timer.compute_ms(launch, config, &mad_ms);
             csv.row("reparam_forward", to_string(s), 
                     size, -1, -1, 
-                    ms, std_ms);
+                    ms, mad_ms);
 
             CUDA_CHECK(cudaFree(d_states));
         }
@@ -89,11 +89,11 @@ void run_reparam_backward(Csv& csv, curandGenerator_t gen,
                 reparametrization::backward(dz.ptr, logvar.ptr, epsilon.ptr, dmu.ptr, dlogvar.ptr, size, s);
             };
 
-            float std_ms = 0.0f;
-            float ms = timer.compute_ms(launch, config, &std_ms);
+            float mad_ms = 0.0f;
+            float ms = timer.compute_ms(launch, config, &mad_ms);
             csv.row("reparam_backward", to_string(s), 
                     size, -1, -1, 
-                    ms, std_ms);
+                    ms, mad_ms);
 
             CUDA_CHECK(cudaFree(d_states));
         }

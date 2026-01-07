@@ -550,6 +550,102 @@ namespace loss {
         CUDA_CHECK(cudaGetLastError());
     }
 
+    void forward_bce(const float* d_X,
+                     const float* d_Z,
+                     float* d_bce,
+                     int batch_size,
+                     int input_dim,
+                     const VAEStrategy& strategy) {
+        const int blockSize = 256;
+        const int size_bce = batch_size * input_dim;
+        const float inv_batch = 1.0f / (float)batch_size;
+        int gridSize_bce;
+
+        CUDA_CHECK(cudaMemset(d_bce, 0, sizeof(float)));
+
+        switch (strategy) {
+            case VAEStrategy::NAIVE:
+            case VAEStrategy::TILING:
+            case VAEStrategy::PADDING:
+                gridSize_bce = (size_bce + blockSize - 1) / blockSize;
+                DEBUG("Launching bce_forward_naive_kernel...");
+                bce_forward_naive_kernel<<<gridSize_bce, blockSize>>>(d_X, d_Z, d_bce, size_bce, inv_batch);
+                break;
+            case VAEStrategy::REDUCTION:
+                gridSize_bce = (size_bce + blockSize - 1) / blockSize;
+                DEBUG("Launching bce_forward_reduction_kernel...");
+                bce_forward_reduction_kernel<<<gridSize_bce, blockSize, blockSize * sizeof(float)>>>(d_X, d_Z, d_bce, size_bce, inv_batch);
+                break;
+            case VAEStrategy::UNROLLED_REDUCTION:
+                gridSize_bce = (size_bce + blockSize - 1) / blockSize;
+                DEBUG("Launching bce_forward_unrolled_reduction_kernel...");
+                bce_forward_unrolled_reduction_kernel<<<gridSize_bce, blockSize, blockSize * sizeof(float)>>>(d_X, d_Z, d_bce, size_bce, inv_batch);
+                break;
+            case VAEStrategy::WARP_REDUCTION:
+                gridSize_bce = (size_bce + blockSize - 1) / blockSize;
+                DEBUG("Launching bce_forward_warp_reduction_kernel...");
+                bce_forward_warp_reduction_kernel<<<gridSize_bce, blockSize, blockSize * sizeof(float)>>>(d_X, d_Z, d_bce, size_bce, inv_batch);
+                break;
+            case VAEStrategy::VECTORIZED:
+            case VAEStrategy::OPTIMIZED:
+            default:
+                gridSize_bce = ((size_bce + 3) / 4 + blockSize - 1) / blockSize;
+                DEBUG("Launching bce_forward_vec4_kernel...");
+                bce_forward_vec4_kernel<<<gridSize_bce, blockSize, blockSize * sizeof(float)>>>(d_X, d_Z, d_bce, size_bce, inv_batch);
+                break;
+        }
+
+        CUDA_CHECK(cudaGetLastError());
+    }
+
+    void forward_kl(const float* d_mu,
+                    const float* d_logvar,
+                    float* d_kl,
+                    int batch_size,
+                    int latent_dim,
+                    const VAEStrategy& strategy) {
+        const int blockSize = 256;
+        const int size_kl = batch_size * latent_dim;
+        const float inv_batch = 1.0f / (float)batch_size;
+        int gridSize_kl;
+
+        CUDA_CHECK(cudaMemset(d_kl, 0, sizeof(float)));
+
+        switch (strategy) {
+            case VAEStrategy::NAIVE:
+            case VAEStrategy::TILING:
+            case VAEStrategy::PADDING:
+                gridSize_kl = (size_kl + blockSize - 1) / blockSize;
+                DEBUG("Launching kl_forward_naive_kernel...");
+                kl_forward_naive_kernel<<<gridSize_kl, blockSize>>>(d_mu, d_logvar, d_kl, size_kl, inv_batch);
+                break;
+            case VAEStrategy::REDUCTION:
+                gridSize_kl = (size_kl + blockSize - 1) / blockSize;
+                DEBUG("Launching kl_forward_reduction_kernel...");
+                kl_forward_reduction_kernel<<<gridSize_kl, blockSize, blockSize * sizeof(float)>>>(d_mu, d_logvar, d_kl, size_kl, inv_batch);
+                break;
+            case VAEStrategy::UNROLLED_REDUCTION:
+                gridSize_kl = (size_kl + blockSize - 1) / blockSize;
+                DEBUG("Launching kl_forward_unrolled_reduction_kernel...");
+                kl_forward_unrolled_reduction_kernel<<<gridSize_kl, blockSize, blockSize * sizeof(float)>>>(d_mu, d_logvar, d_kl, size_kl, inv_batch);
+                break;
+            case VAEStrategy::WARP_REDUCTION:
+                gridSize_kl = (size_kl + blockSize - 1) / blockSize;
+                DEBUG("Launching kl_forward_warp_reduction_kernel...");
+                kl_forward_warp_reduction_kernel<<<gridSize_kl, blockSize, blockSize * sizeof(float)>>>(d_mu, d_logvar, d_kl, size_kl, inv_batch);
+                break;
+            case VAEStrategy::VECTORIZED:
+            case VAEStrategy::OPTIMIZED:
+            default:
+                gridSize_kl = ((size_kl + 3) / 4 + blockSize - 1) / blockSize;
+                DEBUG("Launching kl_forward_vec4_kernel...");
+                kl_forward_vec4_kernel<<<gridSize_kl, blockSize, blockSize * sizeof(float)>>>(d_mu, d_logvar, d_kl, size_kl, inv_batch);
+                break;
+        }
+
+        CUDA_CHECK(cudaGetLastError());
+    }
+
     namespace backward {
 
         void bce(const float* d_X,

@@ -20,7 +20,7 @@ public:
 
     float compute_ms(const std::function<void()>& launch,
                      const BenchmarkConfig& config,
-                     float* std_out = nullptr);
+                     float* mad_out = nullptr);
 
 private:
     cudaEvent_t start{};
@@ -36,7 +36,7 @@ public:
     void row(const char* op,
              const char* strat,
              int M, int K, int N,
-             float ms, float std_ms);
+             float ms, float mad_ms);
 
 private:
     FILE* f = nullptr;

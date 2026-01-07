@@ -42,11 +42,11 @@ void run_sgemm(Csv& csv, curandGenerator_t gen,
                 linalg::sgemm(A.ptr, B.ptr, C.ptr, M, K, N, s);
             };
             
-            float std_ms = 0.0f;
-            float ms = timer.compute_ms(launch, config, &std_ms);
+            float mad_ms = 0.0f;
+            float ms = timer.compute_ms(launch, config, &mad_ms);
             csv.row("sgemm", to_string(s), 
                     M, K, N, 
-                    ms, std_ms);
+                    ms, mad_ms);
         }
     }
 }
@@ -80,11 +80,11 @@ void run_transpose(Csv& csv, curandGenerator_t gen,
                 linalg::transpose(A.ptr, AT.ptr, M, N, s);
             };
 
-            float std_ms = 0.0f;
-            float ms = timer.compute_ms(launch, config, &std_ms);
+            float mad_ms = 0.0f;
+            float ms = timer.compute_ms(launch, config, &mad_ms);
             csv.row("transpose", to_string(s), 
                     M, N, -1, 
-                    ms, std_ms);
+                    ms, mad_ms);
         }
     }
 }
@@ -115,11 +115,11 @@ void run_add_in_place(Csv& csv, curandGenerator_t gen,
                 linalg::add_in_place(A.ptr, B.ptr, size, s);
             };
 
-            float std_ms = 0.0f;
-            float ms = timer.compute_ms(launch, config, &std_ms);
+            float mad_ms = 0.0f;
+            float ms = timer.compute_ms(launch, config, &mad_ms);
             csv.row("add_in_place", to_string(s), 
                     size, -1, -1, 
-                    ms, std_ms);
+                    ms, mad_ms);
         }
     }
 }

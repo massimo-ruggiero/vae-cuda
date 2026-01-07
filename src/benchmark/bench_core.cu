@@ -20,7 +20,7 @@ Timer::~Timer() {
 
 float Timer::compute_ms(const std::function<void()>& launch,
                         const BenchmarkConfig& config,
-                        float* std_out) {
+                        float* mad_out) {
     for (int i = 0; i < config.warmup_iters; ++i) {
         launch();
     }
@@ -43,18 +43,14 @@ float Timer::compute_ms(const std::function<void()>& launch,
     std::sort(times.begin(), times.end());
     float median = times[times.size() / 2];
 
-    if (std_out) {
-        float mean = 0.0f;
-        for (float t : times) mean += t;
-        mean /= times.size();
-
-        float variance = 0.0f;
+    if (mad_out) {
+        std::vector<float> deviations;
+        deviations.reserve(times.size());
         for (float t : times) {
-            float diff = t - mean;
-            variance += diff * diff;
+            deviations.push_back(std::fabs(t - median));
         }
-        variance /= times.size();
-        *std_out = std::sqrt(variance);
+        std::sort(deviations.begin(), deviations.end());
+        *mad_out = deviations[deviations.size() / 2];
     }
 
     return median;
@@ -86,7 +82,7 @@ void Csv::header() {
     if (!enabled) return;
 
     std::fprintf(f,
-        "operation,strategy,M,K,N,median_ms,std_ms\n"
+        "operation,strategy,M,K,N,median_ms,mad_ms\n"
     );
     std::fflush(f);
 }
@@ -95,14 +91,14 @@ void Csv::header() {
 void Csv::row(const char* op,
               const char* strat,
               int M, int K, int N,
-              float ms, float std_ms)
+              float ms, float mad_ms)
 {
     if (!enabled) return;
 
     std::fprintf(f,
         "%s,%s,%d,%d,%d,%.6f,%.6f\n",
         op, strat, M, K, N,
-        ms, std_ms
+        ms, mad_ms
     );
     std::fflush(f);
 }

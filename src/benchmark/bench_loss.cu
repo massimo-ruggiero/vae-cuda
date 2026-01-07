@@ -44,19 +44,27 @@ void run_loss_forward(Csv& csv, curandGenerator_t gen,
             fill_uniform(gen, mu.ptr, mu.size);
             fill_uniform(gen, logvar.ptr, logvar.size);
 
-            float h_loss = 0.0f;
-            auto launch = [&](){
-                loss::forward(X.ptr, Z.ptr, mu.ptr, logvar.ptr,
-                              bce.ptr, kl.ptr, &h_loss,
-                              batch, input_dim, latent_dim,
-                              s, 1.0f);
+            auto launch_bce = [&](){
+                loss::forward_bce(X.ptr, Z.ptr, bce.ptr,
+                                  batch, input_dim, s);
             };
 
-            float std_ms = 0.0f;
-            float ms = timer.compute_ms(launch, config, &std_ms);
-            csv.row("loss_forward", to_string(s), 
+            float bce_mad_ms = 0.0f;
+            float bce_ms = timer.compute_ms(launch_bce, config, &bce_mad_ms);
+            csv.row("bce_forward", to_string(s), 
                     batch, input_dim, latent_dim, 
-                    ms, std_ms);
+                    bce_ms, bce_mad_ms);
+
+            auto launch_kl = [&](){
+                loss::forward_kl(mu.ptr, logvar.ptr, kl.ptr,
+                                 batch, latent_dim, s);
+            };
+
+            float kl_mad_ms = 0.0f;
+            float kl_ms = timer.compute_ms(launch_kl, config, &kl_mad_ms);
+            csv.row("kl_forward", to_string(s), 
+                    batch, input_dim, latent_dim, 
+                    kl_ms, kl_mad_ms);
         }
     }
 }
@@ -88,11 +96,11 @@ void run_bce_backward(Csv& csv, curandGenerator_t gen,
                 loss::backward::bce(X.ptr, X_hat.ptr, dA.ptr, size, s);
             };
 
-            float std_ms = 0.0f;
-            float ms = timer.compute_ms(launch, config, &std_ms);
+            float mad_ms = 0.0f;
+            float ms = timer.compute_ms(launch, config, &mad_ms);
             csv.row("bce_backward", to_string(s), 
                     size, -1, -1, 
-                    ms, std_ms);
+                    ms, mad_ms);
         }
     }
 }
@@ -125,11 +133,11 @@ void run_kl_backward(Csv& csv, curandGenerator_t gen,
                 loss::backward::kl(mu.ptr, logvar.ptr, dmu.ptr, dlogvar.ptr, size, s, 1.0f);
             };
 
-            float std_ms = 0.0f;
-            float ms = timer.compute_ms(launch, config, &std_ms);
+            float mad_ms = 0.0f;
+            float ms = timer.compute_ms(launch, config, &mad_ms);
             csv.row("kl_backward", to_string(s), 
                     size, -1, -1, 
-                    ms, std_ms);
+                    ms, mad_ms);
         }
     }
 }

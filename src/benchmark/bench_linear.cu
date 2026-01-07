@@ -34,11 +34,11 @@ void run_add_bias(Csv& csv, curandGenerator_t gen,
                 linear::add_bias(Z.ptr, b.ptr, batch, output_dim, s);
             };
 
-            float std_ms = 0.0f;
-            float ms = timer.compute_ms(launch, config, &std_ms);
+            float mad_ms = 0.0f;
+            float ms = timer.compute_ms(launch, config, &mad_ms);
             csv.row("add_bias", to_string(s),
                     batch, output_dim, -1,
-                    ms, std_ms);
+                    ms, mad_ms);
         }
     }
 }

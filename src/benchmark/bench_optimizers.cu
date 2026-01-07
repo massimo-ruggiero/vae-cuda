@@ -35,11 +35,11 @@ void run_adam_step(Csv& csv, curandGenerator_t gen,
                 optimizers::adam::step(g.ptr, theta.ptr, m.ptr, v.ptr, 10, size, s);
             };
 
-            float std_ms = 0.0f;
-            float ms = timer.compute_ms(launch, config, &std_ms);
+            float mad_ms = 0.0f;
+            float ms = timer.compute_ms(launch, config, &mad_ms);
             csv.row("adam_step", to_string(s), 
                     size, -1, -1, 
-                    ms, std_ms);
+                    ms, mad_ms);
         }
     }
 }
