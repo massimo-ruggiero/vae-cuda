@@ -322,10 +322,8 @@ __global__ void add_inplace_vec4_kernel(float* __restrict__ A,
 
         *reinterpret_cast<float4*>(&A[idx]) = A_vec;
     } else if (idx < size) {
-        #pragma unroll
-        for (int t = 0; t < 4; ++t) {
-            int i = idx + t;
-            if (i < size) A[i] += B[i];
+        for (int i = idx; i < size; ++i) {
+            A[i] += B[i];
         }
     }
 }
