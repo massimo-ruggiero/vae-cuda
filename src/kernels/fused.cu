@@ -15,6 +15,8 @@ static constexpr int WMMA_K = 16;
 static constexpr int WMMA_N = 16;
 
 static constexpr int TILE_DIM = 16;
+static constexpr int WARP_SIZE = 32;
+
 constexpr int TILE_ELEMENTS = TILE_DIM * TILE_DIM; 
 constexpr int VALUES_PER_THREAD = TILE_ELEMENTS / WARP_SIZE; 
 
@@ -32,8 +34,8 @@ __global__ void linear_lrelu_wmma_kernel(const float* __restrict__ X,
                                          int M, int K, int N,
                                          float alpha) {
     const int tid = threadIdx.x + threadIdx.y * blockDim.x;                 
-    const int lane_id = tid % warpSize;
-    const int warp_id = tid / warpSize;  
+    const int lane_id = tid % WARP_SIZE;
+    const int warp_id = tid / WARP_SIZE;  
 
     const int threads_per_block = blockDim.x * blockDim.y;
     const int warps_per_block   = threads_per_block / WARP_SIZE;
@@ -124,8 +126,8 @@ __global__ void linear_sigmoid_wmma_kernel(const float* __restrict__ X,
                                            float* __restrict__ A,
                                            int M, int K, int N) {
     const int tid = threadIdx.x + threadIdx.y * blockDim.x;                 
-    const int lane_id = tid % warpSize;
-    const int warp_id = tid / warpSize;  
+    const int lane_id = tid % WARP_SIZE;
+    const int warp_id = tid / WARP_SIZE;  
 
     const int threads_per_block = blockDim.x * blockDim.y;
     const int warps_per_block   = threads_per_block / WARP_SIZE;
@@ -222,7 +224,7 @@ namespace fused {
                             int M, int K, int N,
                             float alpha) {
             const int warps_per_block = 4;
-            dim3 blockSize(warps_per_block * warpSize, 1);
+            dim3 blockSize(warps_per_block * WARP_SIZE, 1);
 
             int tiles_y = (M + TILE_DIM - 1) / TILE_DIM;
             int tiles_x = (N + TILE_DIM - 1) / TILE_DIM;
@@ -247,7 +249,7 @@ namespace fused {
                                float* d_A,
                                int M, int K, int N) {
             const int warps_per_block = 4;
-            dim3 blockSize(warps_per_block * warpSize, 1);
+            dim3 blockSize(warps_per_block * WARP_SIZE, 1);
 
             int tiles_y = (M + TILE_DIM - 1) / TILE_DIM;
             int tiles_x = (N + TILE_DIM - 1) / TILE_DIM;
