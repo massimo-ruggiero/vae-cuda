@@ -71,6 +71,7 @@ int main(int argc, char** argv) {
 
     curandGenerator_t gen = make_gen(1234ULL);
     Timer timer;
+    const bool is_profiling = (args.option == "profiling");
     std::cout << std::fixed << std::setprecision(4);
 
     std::cout << "\n🚀 Launching fused micro benchmark (" << args.option << ")...\n";
@@ -99,24 +100,26 @@ int main(int argc, char** argv) {
         fill_uniform(gen, W.ptr, W.size);
         fill_uniform(gen, b.ptr, b.size);
 
-        std::cout << "\n[Fused Micro Bench] M=" << M
-                  << " K=" << K
-                  << " N=" << N
-                  << " warmup=" << config.warmup_iters
-                  << " iters=" << config.iters
-                  << " option=" << args.option << "\n";
+        if (!is_profiling) {
+            std::cout << "\n[Fused Micro Bench] M=" << M
+                      << " K=" << K
+                      << " N=" << N
+                      << " warmup=" << config.warmup_iters
+                      << " iters=" << config.iters
+                      << " option=" << args.option << "\n";
+        }
 
         auto launch_sep_lrelu = [&]() {
-            linear::forward(X.ptr, W.ptr, b.ptr, Z.ptr, M, K, N, VAEStrategy::NAIVE);
-            activations::leaky_relu::forward(Z.ptr, A_lrelu.ptr, 0.2f, M * N, VAEStrategy::NAIVE);
+            linear::forward(X.ptr, W.ptr, b.ptr, Z.ptr, M, K, N, VAEStrategy::OPTIMIZED);
+            activations::leaky_relu::forward(Z.ptr, A_lrelu.ptr, 0.2f, M * N, VAEStrategy::OPTIMIZED);
         };
         auto launch_fused_lrelu = [&]() {
             fused::forward::linear_lrelu_tc(X.ptr, W.ptr, b.ptr, A_lrelu.ptr, M, K, N, 0.2f);
         };
 
         auto launch_sep_sigmoid = [&]() {
-            linear::forward(X.ptr, W.ptr, b.ptr, Z.ptr, M, K, N, VAEStrategy::NAIVE);
-            activations::sigmoid::forward(Z.ptr, A_sigmoid.ptr, M * N, VAEStrategy::NAIVE);
+            linear::forward(X.ptr, W.ptr, b.ptr, Z.ptr, M, K, N, VAEStrategy::OPTIMIZED);
+            activations::sigmoid::forward(Z.ptr, A_sigmoid.ptr, M * N, VAEStrategy::OPTIMIZED);
         };
         auto launch_fused_sigmoid = [&]() {
             fused::forward::linear_sigmoid_tc(X.ptr, W.ptr, b.ptr, A_sigmoid.ptr, M, K, N);
@@ -127,18 +130,22 @@ int main(int argc, char** argv) {
         float mad_fused = 0.0f;
         float med_fused = timer.compute_ms(launch_fused_lrelu, config, &mad_fused);
 
-        std::cout << "\n[Linear+LeakyReLU]\n";
-        std::cout << "separate: median_ms=" << med_sep << " mad_ms=" << mad_sep << "\n";
-        std::cout << "fused:    median_ms=" << med_fused << " mad_ms=" << mad_fused << "\n";
+        if (!is_profiling) {
+            std::cout << "\n[Linear+LeakyReLU]\n";
+            std::cout << "separate: median_ms=" << med_sep << " mad_ms=" << mad_sep << "\n";
+            std::cout << "fused:    median_ms=" << med_fused << " mad_ms=" << mad_fused << "\n";
+        }
 
         mad_sep = 0.0f;
         med_sep = timer.compute_ms(launch_sep_sigmoid, config, &mad_sep);
         mad_fused = 0.0f;
         med_fused = timer.compute_ms(launch_fused_sigmoid, config, &mad_fused);
 
-        std::cout << "\n[Linear+Sigmoid]\n";
-        std::cout << "separate: median_ms=" << med_sep << " mad_ms=" << mad_sep << "\n";
-        std::cout << "fused:    median_ms=" << med_fused << " mad_ms=" << mad_fused << "\n";
+        if (!is_profiling) {
+            std::cout << "\n[Linear+Sigmoid]\n";
+            std::cout << "separate: median_ms=" << med_sep << " mad_ms=" << mad_sep << "\n";
+            std::cout << "fused:    median_ms=" << med_fused << " mad_ms=" << mad_fused << "\n";
+        }
     }
 
     curandDestroyGenerator(gen);
