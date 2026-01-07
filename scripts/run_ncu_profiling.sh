@@ -69,7 +69,7 @@ set -euo pipefail
 EOF
   chmod +x "${runner}"
 
-  ncu --set full \
+  ncu --set detailed \
       --import-source yes \
       --kernel-name "regex:.*_kernel" \
       --export "${report}" \

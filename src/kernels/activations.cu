@@ -53,7 +53,7 @@ __global__ void sigmoid_forward_naive_kernel(const float* Z,
                                              int size) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx < size) { 
-        A[idx] = 1.0f / (1.0f + expf(-Z[idx])); // TODO: ottimizzare con __expf (SFU) - Micro-Optimization
+        A[idx] = 1.0f / (1.0f + expf(-Z[idx])); 
     }
 }
 
@@ -73,7 +73,7 @@ __global__ void sigmoid_forward_vec4_kernel(const float* Z,
         *reinterpret_cast<float4*>(&A[idx]) = A_vec;
     } else if (idx < size) {
         for (int i = idx; i < size; ++i) {
-            A[i] = 1.0f / (1.0f + expf(-Z[i])); // TODO: __frcp_rn(x) (SFU) - Micro-Optimization
+            A[i] = 1.0f / (1.0f + expf(-Z[i])); 
         }
     }
 }
