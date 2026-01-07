@@ -218,7 +218,6 @@ namespace fused {
         void linear_lrelu_tc(const float* d_X,
                             const float* d_W,
                             const float* d_b,
-                            float* d_Z,
                             float* d_A,
                             int M, int K, int N,
                             float alpha) {
@@ -245,7 +244,6 @@ namespace fused {
         void linear_sigmoid_tc(const float* d_X,
                                const float* d_W,
                                const float* d_b,
-                               float* d_Z,
                                float* d_A,
                                int M, int K, int N) {
             const int warps_per_block = 4;

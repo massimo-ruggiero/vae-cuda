@@ -74,7 +74,7 @@ int main(int argc, char** argv) {
         activations::leaky_relu::forward(Z.ptr, A_lrelu.ptr, 0.2f, M * N, VAEStrategy::OPTIMIZED);
     };
     auto launch_fused_lrelu = [&]() {
-        fused::forward::linear_lrelu_tc(X.ptr, W.ptr, b.ptr, Z.ptr, A_lrelu.ptr, M, K, N, 0.2f);
+        fused::forward::linear_lrelu_tc(X.ptr, W.ptr, b.ptr, A_lrelu.ptr, M, K, N, 0.2f);
     };
 
     auto launch_sep_sigmoid = [&]() {
@@ -82,7 +82,7 @@ int main(int argc, char** argv) {
         activations::sigmoid::forward(Z.ptr, A_sigmoid.ptr, M * N, VAEStrategy::OPTIMIZED);
     };
     auto launch_fused_sigmoid = [&]() {
-        fused::forward::linear_sigmoid_tc(X.ptr, W.ptr, b.ptr, Z.ptr, A_sigmoid.ptr, M, K, N);
+        fused::forward::linear_sigmoid_tc(X.ptr, W.ptr, b.ptr, A_sigmoid.ptr, M, K, N);
     };
 
     float mad_sep = 0.0f;
