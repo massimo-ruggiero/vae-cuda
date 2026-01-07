@@ -10,6 +10,13 @@ namespace linear {
                   int output_dim,
                   const VAEStrategy& strategy);
 
+    // Helper used only for benchmarking db in isolation.
+    void db(const float* d_dZ,
+            float* d_db,
+            int batch_size,
+            int output_dim,
+            const VAEStrategy& strategy);
+
     void forward(const float* d_X,
                     const float* d_W,
                     const float* d_b,

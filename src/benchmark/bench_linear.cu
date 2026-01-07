@@ -42,3 +42,40 @@ void run_add_bias(Csv& csv, curandGenerator_t gen,
         }
     }
 }
+
+void run_db(Csv& csv, curandGenerator_t gen,
+            Timer& timer,
+            const BenchmarkConfig& config) {
+    VAEStrategy strategies[] = {
+        VAEStrategy::NAIVE,
+        VAEStrategy::VECTORIZED,
+    };
+
+    for (VAEStrategy s : strategies) {
+        for (auto t : ADD_BIAS_SIZES) {
+            int batch = t.batch;
+            int output_dim = t.output_dim;
+            size_t size = static_cast<size_t>(batch) * static_cast<size_t>(output_dim);
+
+            std::cout << "[Linear] db benchmark: strategy = " << to_string(s)
+                      << " batch = " << batch
+                      << " output_dim = " << output_dim << std::endl;
+
+            GPUBuffer dZ, db;
+            dZ.allocate(size);
+            db.allocate(output_dim);
+
+            fill_uniform(gen, dZ.ptr, dZ.size);
+
+            auto launch = [&]() {
+                linear::db(dZ.ptr, db.ptr, batch, output_dim, s);
+            };
+
+            float mad_ms = 0.0f;
+            float ms = timer.compute_ms(launch, config, &mad_ms);
+            csv.row("db", to_string(s),
+                    batch, output_dim, -1,
+                    ms, mad_ms);
+        }
+    }
+}

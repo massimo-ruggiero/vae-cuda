@@ -62,7 +62,32 @@ __global__ void db_naive_kernel(const float* __restrict__ d_dZ,
     }
 }
 
-// TODO: vedere se fare altre versioni
+__global__ void db_vec4_kernel(const float* __restrict__ d_dZ,
+                               float* __restrict__ d_db,
+                               int batch_size,
+                               int output_dim) {
+    int idx = (blockIdx.x * blockDim.x + threadIdx.x) * 4;
+    if (idx + 3 < output_dim) {
+        float4 sum = make_float4(0.0f, 0.0f, 0.0f, 0.0f);
+        for (int b = 0; b < batch_size; ++b) {
+            const float* row = d_dZ + b * output_dim + idx;
+            float4 val = *reinterpret_cast<const float4*>(row);
+            sum.x += val.x;
+            sum.y += val.y;
+            sum.z += val.z;
+            sum.w += val.w;
+        }
+        *reinterpret_cast<float4*>(&d_db[idx]) = sum;
+    } else if (idx < output_dim) {
+        for (int i = idx; i < output_dim; ++i) {
+            float sum = 0.0f;
+            for (int b = 0; b < batch_size; ++b) {
+                sum += d_dZ[b * output_dim + i];
+            }
+            d_db[i] = sum;
+        }
+    }
+}
 
 
 // ==============================
@@ -96,6 +121,30 @@ namespace linear {
                 gridSize = dim3(((output_dim + 3) / 4 + blockSize.x - 1) / blockSize.x,
                                 (batch_size + blockSize.y - 1) / blockSize.y);
                 add_bias_vec4_kernel<<<gridSize, blockSize>>>(d_Z, d_b, batch_size, output_dim);
+                break;
+        }
+
+        CUDA_CHECK(cudaGetLastError());
+    }
+
+    void db(const float* d_dZ,
+            float* d_db,
+            int batch_size,
+            int output_dim,
+            const VAEStrategy& strategy) {
+        const int blockSize = 512;
+        int gridSize;
+        switch(strategy) {
+            case VAEStrategy::VECTORIZED:
+            case VAEStrategy::OPTIMIZED:
+                gridSize = ((output_dim + 3) / 4 + blockSize - 1) / blockSize;
+                DEBUG("Launching db_vec4_kernel...");
+                db_vec4_kernel<<<gridSize, blockSize>>>(d_dZ, d_db, batch_size, output_dim);
+                break;
+            default:
+                gridSize = (output_dim + blockSize - 1) / blockSize;
+                DEBUG("Launching db_naive_kernel...");
+                db_naive_kernel<<<gridSize, blockSize>>>(d_dZ, d_db, batch_size, output_dim);
                 break;
         }
 
@@ -162,13 +211,7 @@ namespace linear {
         linalg::sgemm(d_XT, d_dZ, d_dW, input_dim, batch_size, output_dim, strategy);
 
         // d_db
-        const int blockSize = 512;
-        const int gridSize = (output_dim + blockSize - 1) / blockSize;
-        
-        DEBUG("Launching db_naive_kernel...");
-        db_naive_kernel<<<gridSize, blockSize>>>(d_dZ, d_db, batch_size, output_dim);
-        
-        CUDA_CHECK(cudaGetLastError());
+        db(d_dZ, d_db, batch_size, output_dim, strategy);
     }
 
 } // namespace linear

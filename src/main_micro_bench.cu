@@ -131,6 +131,7 @@ int main(int argc, char** argv) {
         csv.header();
 
         run_add_bias(csv, gen, timer, config);
+        run_db(csv, gen, timer, config);
         std::cout << "[Benchmark] ✅ Linear done.\n";
     }
 

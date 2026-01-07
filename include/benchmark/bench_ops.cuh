@@ -19,6 +19,10 @@ void run_add_bias(Csv& csv, curandGenerator_t gen,
                   Timer& timer, 
                   const BenchmarkConfig& config);
 
+void run_db(Csv& csv, curandGenerator_t gen, 
+            Timer& timer, 
+            const BenchmarkConfig& config);
+
 void run_leaky_relu_forward(Csv& csv, curandGenerator_t gen, 
                             Timer& timer, 
                             const BenchmarkConfig& config);

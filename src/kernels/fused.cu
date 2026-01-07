@@ -10,10 +10,6 @@
 
 using namespace nvcuda;
 
-static constexpr int WMMA_M = 16;
-static constexpr int WMMA_K = 16;
-static constexpr int WMMA_N = 16;
-
 static constexpr int TILE_DIM = 16;
 static constexpr int WARP_SIZE = 32;
 
