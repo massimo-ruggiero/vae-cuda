@@ -5,7 +5,7 @@ set -euo pipefail
 ARCH="${ARCH:-sm_75}"
 OUT="${OUT:-main_macro_bench}"
 EPOCHS="${EPOCHS:-100}"
-STRATEGIES="${STRATEGIES:-FUSED}"
+STRATEGIES="${STRATEGIES:-KERNEL_FUSION}"
 
 # Include paths
 INCLUDES=(
