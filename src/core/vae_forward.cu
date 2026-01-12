@@ -25,7 +25,7 @@ namespace vae {
                                             hidden_dim,
                                             0.2f);
 
-            fused::forward::linear(buf.enc1.A.ptr,
+            fused::forward::linear_tc(buf.enc1.A.ptr,
                                    buf.enc2_mu.W.ptr,
                                    buf.enc2_mu.b.ptr,
                                    buf.enc2_mu.Z.ptr, // mu
@@ -33,7 +33,7 @@ namespace vae {
                                    hidden_dim,
                                    latent_dim);
 
-            fused::forward::linear(buf.enc1.A.ptr,
+            fused::forward::linear_tc(buf.enc1.A.ptr,
                                    buf.enc2_logvar.W.ptr,
                                    buf.enc2_logvar.b.ptr,
                                    buf.enc2_logvar.Z.ptr, // logvar
