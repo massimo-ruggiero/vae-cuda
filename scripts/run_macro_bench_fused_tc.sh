@@ -41,6 +41,7 @@ SRCS=(
 echo "[macro-bench] build: nvcc -arch=${ARCH} -> ${OUT}"
 
 nvcc -arch="${ARCH}" \
+     --extended-lambda \
      "${INCLUDES[@]}" \
      "${SRCS[@]}" \
      -lcurand \
