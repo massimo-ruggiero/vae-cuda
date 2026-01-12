@@ -24,6 +24,22 @@ namespace vae {
                                             input_dim,
                                             hidden_dim,
                                             0.2f);
+
+            fused::forward::linear(buf.enc1.A.ptr,
+                                   buf.enc2_mu.W.ptr,
+                                   buf.enc2_mu.b.ptr,
+                                   buf.enc2_mu.Z.ptr, // mu
+                                   batch_size,
+                                   hidden_dim,
+                                   latent_dim);
+
+            fused::forward::linear(buf.enc1.A.ptr,
+                                   buf.enc2_logvar.W.ptr,
+                                   buf.enc2_logvar.b.ptr,
+                                   buf.enc2_logvar.Z.ptr, // logvar
+                                   batch_size,
+                                   hidden_dim,
+                                   latent_dim);
         } else {
             linear::forward(buf.d_X.ptr,
                             buf.enc1.W.ptr,
@@ -39,9 +55,8 @@ namespace vae {
                                                 0.2f,
                                                 batch_size * hidden_dim,
                                                 strategy);
-        }
 
-        linear::forward(buf.enc1.A.ptr,
+            linear::forward(buf.enc1.A.ptr,
                         buf.enc2_mu.W.ptr,
                         buf.enc2_mu.b.ptr,
                         buf.enc2_mu.Z.ptr, // mu
@@ -50,14 +65,15 @@ namespace vae {
                         latent_dim,
                         strategy);
 
-        linear::forward(buf.enc1.A.ptr,
-                        buf.enc2_logvar.W.ptr,
-                        buf.enc2_logvar.b.ptr,
-                        buf.enc2_logvar.Z.ptr, // logvar
-                        batch_size,
-                        hidden_dim,
-                        latent_dim,
-                        strategy);
+            linear::forward(buf.enc1.A.ptr,
+                            buf.enc2_logvar.W.ptr,
+                            buf.enc2_logvar.b.ptr,
+                            buf.enc2_logvar.Z.ptr, // logvar
+                            batch_size,
+                            hidden_dim,
+                            latent_dim,
+                            strategy);
+        }
     }
 
     void decoder_pass(VAEBuffers& buf){
@@ -76,6 +92,14 @@ namespace vae {
                                             latent_dim,
                                             hidden_dim,
                                             0.2f);
+
+            fused::forward::linear_sigmoid_tc(buf.dec1.A.ptr,
+                                              buf.dec2.W.ptr,
+                                              buf.dec2.b.ptr,
+                                              buf.d_X_hat.ptr,
+                                              batch_size,
+                                              hidden_dim,
+                                              input_dim);
         } else {
             linear::forward(buf.d_z.ptr,
                             buf.dec1.W.ptr,
@@ -91,17 +115,7 @@ namespace vae {
                                                 0.2f,
                                                 batch_size * hidden_dim,
                                                 strategy);
-        }
 
-        if (strategy == VAEStrategy::KERNEL_FUSION) {
-            fused::forward::linear_sigmoid_tc(buf.dec1.A.ptr,
-                                              buf.dec2.W.ptr,
-                                              buf.dec2.b.ptr,
-                                              buf.d_X_hat.ptr,
-                                              batch_size,
-                                              hidden_dim,
-                                              input_dim);
-        } else {
             linear::forward(buf.dec1.A.ptr,
                             buf.dec2.W.ptr,
                             buf.dec2.b.ptr,

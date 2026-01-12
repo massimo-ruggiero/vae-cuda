@@ -18,6 +18,12 @@ namespace fused {
                             float* d_A,
                             int M, int K, int N);
 
+        void linear_tc(const float* d_X,
+                       const float* d_W,
+                       const float* d_b,
+                       float* Z,
+                       int M, int K, int N);
+
     } // namespace forward
 
 } // namespace fused

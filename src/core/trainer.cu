@@ -66,7 +66,10 @@ void Trainer::fit(int epochs) {
         double seconds = static_cast<double>(ms) / 1000.0;
         epoch_times.push_back(seconds);
 
-        (void)avg_loss;
+        std::cout << "Epoch [" << std::setw(3) << epoch + 1 << "/" << epochs << "] "
+                  << "| Avg Loss: " << std::fixed << std::setprecision(6) << avg_loss << " "
+                  << "| Time: " << std::fixed << std::setprecision(3) << seconds << "s" 
+                  << std::endl;
     }
 
     cudaEventDestroy(start);

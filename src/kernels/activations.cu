@@ -252,6 +252,7 @@ namespace activations {
                     break;
                 case VAEStrategy::NAIVE:
                 case VAEStrategy::OPTIMIZED: 
+                default:
                     DEBUG("Launching sigmoid_forward_naive_kernel...");
                     gridSize = (size + blockSize - 1) / blockSize;
                     sigmoid_forward_naive_kernel<<<gridSize, blockSize>>>(d_Z, d_A, size);
