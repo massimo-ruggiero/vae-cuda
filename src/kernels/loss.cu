@@ -657,18 +657,18 @@ namespace loss {
             int gridSize;
 
             switch(strategy) {
-                case VAEStrategy::NAIVE: 
-                    gridSize = (size + blockSize - 1) / blockSize;
-                    DEBUG("Launching bce_backward_naive_kernel...");
-                    bce_backward_naive_kernel<<<gridSize, blockSize>>>(d_X, d_X_hat, d_dA, size);
-                    break;   
                 case VAEStrategy::VECTORIZED: 
-                case VAEStrategy::OPTIMIZED: 
-                default:  
                     gridSize = ((size + 3) / 4 + blockSize - 1) / blockSize;
                     DEBUG("Launching bce_backward_vec4_kernel...");
                     bce_backward_vec4_kernel<<<gridSize, blockSize>>>(d_X, d_X_hat, d_dA, size);
-                    break;  
+                    break; 
+                case VAEStrategy::NAIVE: 
+                case VAEStrategy::OPTIMIZED: 
+                default:  
+                    gridSize = (size + blockSize - 1) / blockSize;
+                    DEBUG("Launching bce_backward_naive_kernel...");
+                    bce_backward_naive_kernel<<<gridSize, blockSize>>>(d_X, d_X_hat, d_dA, size);
+                    break;    
             }
 
             CUDA_CHECK(cudaGetLastError());
@@ -685,23 +685,18 @@ namespace loss {
             int gridSize;
 
             switch(strategy) {
-                case VAEStrategy::NAIVE: 
-                case VAEStrategy::TILING:
-                case VAEStrategy::PADDING:
-                case VAEStrategy::REDUCTION:
-                case VAEStrategy::UNROLLED_REDUCTION:
-                case VAEStrategy::WARP_REDUCTION:
-                    gridSize = (size + blockSize - 1) / blockSize;
-                    DEBUG("Launching kl_backward_naive_kernel...");
-                    kl_backward_naive_kernel<<<gridSize, blockSize>>>(d_mu, d_logvar, d_dmu, d_dlogvar, size, beta); 
-                    break;   
                 case VAEStrategy::VECTORIZED: 
-                case VAEStrategy::OPTIMIZED: 
-                default: 
                     gridSize = ((size + 3) / 4 + blockSize - 1) / blockSize;
                     DEBUG("Launching kl_backward_vec4_kernel...");
                     kl_backward_vec4_kernel<<<gridSize, blockSize>>>(d_mu, d_logvar, d_dmu, d_dlogvar, size, beta); 
-                    break;     
+                    break;  
+                case VAEStrategy::NAIVE: 
+                case VAEStrategy::OPTIMIZED: 
+                default: 
+                    gridSize = (size + blockSize - 1) / blockSize;
+                    DEBUG("Launching kl_backward_naive_kernel...");
+                    kl_backward_naive_kernel<<<gridSize, blockSize>>>(d_mu, d_logvar, d_dmu, d_dlogvar, size, beta); 
+                    break;      
             }      
 
             CUDA_CHECK(cudaGetLastError());

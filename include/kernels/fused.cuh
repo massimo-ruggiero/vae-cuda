@@ -15,6 +15,7 @@ namespace fused {
         void linear_sigmoid_tc(const float* d_X,
                             const float* d_W,
                             const float* d_b,
+                            float* d_Z,
                             float* d_A,
                             int M, int K, int N);
 

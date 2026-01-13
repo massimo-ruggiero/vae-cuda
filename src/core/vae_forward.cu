@@ -96,6 +96,7 @@ namespace vae {
             fused::forward::linear_sigmoid_tc(buf.dec1.A.ptr,
                                               buf.dec2.W.ptr,
                                               buf.dec2.b.ptr,
+                                              buf.dec2.Z.ptr,
                                               buf.d_X_hat.ptr,
                                               batch_size,
                                               hidden_dim,

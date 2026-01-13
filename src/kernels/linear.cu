@@ -104,23 +104,19 @@ namespace linear {
         dim3 blockSize(16, 16);
         dim3 gridSize;
         switch(strategy) {
-            case VAEStrategy::NAIVE:
-            case VAEStrategy::TILING:
-            case VAEStrategy::PADDING:
-            case VAEStrategy::REDUCTION:
-            case VAEStrategy::UNROLLED_REDUCTION:
-            case VAEStrategy::WARP_REDUCTION:
-                DEBUG("Launching add_bias_naive_kernel...");
-                gridSize = dim3((output_dim + blockSize.x - 1) / blockSize.x,
-                                (batch_size + blockSize.y - 1) / blockSize.y);
-                add_bias_naive_kernel<<<gridSize, blockSize>>>(d_Z, d_b, batch_size, output_dim);
-                break;
             case VAEStrategy::VECTORIZED:
-            default:
                 DEBUG("Launching add_bias_vec4_kernel...");
                 gridSize = dim3(((output_dim + 3) / 4 + blockSize.x - 1) / blockSize.x,
                                 (batch_size + blockSize.y - 1) / blockSize.y);
                 add_bias_vec4_kernel<<<gridSize, blockSize>>>(d_Z, d_b, batch_size, output_dim);
+                break;
+            case VAEStrategy::NAIVE:
+            case VAEStrategy::OPTIMIZED
+            default:
+                DEBUG("Launching add_bias_naive_kernel...");
+                gridSize = dim3((output_dim + blockSize.x - 1) / blockSize.x,
+                                (batch_size + blockSize.y - 1) / blockSize.y);
+                add_bias_naive_kernel<<<gridSize, blockSize>>>(d_Z, d_b, batch_size, output_dim);
                 break;
         }
 

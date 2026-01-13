@@ -24,6 +24,7 @@ template<typename ActivationFunction>
 __device__ __forceinline__ void wmma_linear_core(const float* X,
                                                  const float* W,
                                                  const float* b,
+                                                 float* Z,
                                                  float* A,
                                                  int M, int K, int N,
                                                  ActivationFunction fn) {
@@ -108,6 +109,7 @@ __device__ __forceinline__ void wmma_linear_core(const float* X,
         if (out_r < M && out_c < N) {
             float val = shmem_out[r * TILE_DIM + c];
             val += b[out_c];
+            if (Z) Z[out_r * N + out_c] = val;
             A[out_r * N + out_c] = fn(val);
         }
     }
@@ -134,6 +136,7 @@ __global__ void linear_lrelu_wmma_kernel(const float* __restrict__ X,
 __global__ void linear_sigmoid_wmma_kernel(const float* __restrict__ X, 
                                            const float* __restrict__ W, 
                                            const float* __restrict__ b, 
+                                           float* __restrict__ Z
                                            float* __restrict__ A, 
                                            int M, int K, int N) {
     wmma_linear_core(X, W, b, A, 
@@ -188,6 +191,7 @@ namespace fused {
         void linear_sigmoid_tc(const float* d_X,
                                const float* d_W,
                                const float* d_b,
+                               float* d_Z,
                                float* d_A,
                                int M, int K, int N) {
             const int warps_per_block = 4;
@@ -204,7 +208,7 @@ namespace fused {
             size_t shmem_size = warps_per_block * SHMEM_HALFS_PER_WARP * sizeof(half);
 
             linear_sigmoid_wmma_kernel<<<gridSize, blockSize, shmem_size>>>(
-                d_X, d_W, d_b, d_A, M, K, N
+                d_X, d_W, d_b, d_Z, d_A, M, K, N
             );
 
             CUDA_CHECK(cudaGetLastError());

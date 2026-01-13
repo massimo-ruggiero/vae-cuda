@@ -410,17 +410,17 @@ namespace linalg {
         const int blockSize = 512;
         int gridSize;
         switch(strategy) {
-            case VAEStrategy::NAIVE:
-                gridSize  = (size + blockSize - 1) / blockSize;
-                DEBUG("Launching add_inplace_naive_kernel...");
-                add_inplace_naive_kernel<<<gridSize, blockSize>>>(d_A, d_B, size);
-                break;
             case VAEStrategy::VECTORIZED:
-            case VAEStrategy::OPTIMIZED:
-            default:
                 gridSize  = ((size + 3) / 4 + blockSize - 1) / blockSize;
                 DEBUG("Launching add_inplace_vec4_kernel...");
                 add_inplace_vec4_kernel<<<gridSize, blockSize>>>(d_A, d_B, size);
+                break;
+            case VAEStrategy::NAIVE:
+            case VAEStrategy::OPTIMIZED:
+            default:
+                gridSize  = (size + blockSize - 1) / blockSize;
+                DEBUG("Launching add_inplace_naive_kernel...");
+                add_inplace_naive_kernel<<<gridSize, blockSize>>>(d_A, d_B, size);
                 break;
         }
 
