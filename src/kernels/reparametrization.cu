@@ -214,22 +214,17 @@ namespace reparametrization {
         int gridSize;
 
         switch(strategy) {
-            case VAEStrategy::NAIVE:
-            case VAEStrategy::TILING:
-            case VAEStrategy::PADDING:
-            case VAEStrategy::REDUCTION:
-            case VAEStrategy::UNROLLED_REDUCTION:
-            case VAEStrategy::WARP_REDUCTION:
-                gridSize = (size + blockSize - 1) / blockSize;
-                DEBUG("Launching reparametrization_backward_kernel...");
-                reparametrization_backward_naive_kernel<<<gridSize, blockSize>>>(d_dz, d_logvar, d_epsilon, d_dmu, d_dlogvar, size);
-                break;
             case VAEStrategy::VECTORIZED:
-            case VAEStrategy::OPTIMIZED: 
-            default:
                 gridSize = ((size + 3) / 4 + blockSize - 1) / blockSize;
                 DEBUG("Launching reparametrization_backward_vec4_kernel...");
                 reparametrization_backward_vec4_kernel<<<gridSize, blockSize>>>(d_dz, d_logvar, d_epsilon, d_dmu, d_dlogvar, size);
+                break;
+            case VAEStrategy::NAIVE:
+            case VAEStrategy::OPTIMIZED: 
+            default:
+                gridSize = (size + blockSize - 1) / blockSize;
+                DEBUG("Launching reparametrization_backward_kernel...");
+                reparametrization_backward_naive_kernel<<<gridSize, blockSize>>>(d_dz, d_logvar, d_epsilon, d_dmu, d_dlogvar, size);
                 break;
         }
 

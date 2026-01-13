@@ -181,22 +181,17 @@ namespace activations {
             const int blockSize = 512;
             int gridSize;
             switch(strategy) {
-                case VAEStrategy::NAIVE:
-                case VAEStrategy::TILING: 
-                case VAEStrategy::PADDING: 
-                case VAEStrategy::REDUCTION: 
-                case VAEStrategy::UNROLLED_REDUCTION: 
-                case VAEStrategy::WARP_REDUCTION: 
-                    DEBUG("Launching leaky_relu_forward_naive_kernel...");
-                    gridSize = (size + blockSize - 1) / blockSize;
-                    leaky_relu_forward_naive_kernel<<<gridSize, blockSize>>>(d_Z, d_A, d_alpha, size);
-                    break;
                 case VAEStrategy::VECTORIZED:
-                case VAEStrategy::OPTIMIZED:
-                default:
                     DEBUG("Launching leaky_relu_forward_kernel...");
                     gridSize = ((size + 3) / 4 + blockSize - 1) / blockSize;
                     leaky_relu_forward_vec4_kernel<<<gridSize, blockSize>>>(d_Z, d_A, d_alpha, size);
+                    break;
+                case VAEStrategy::NAIVE:
+                case VAEStrategy::OPTIMIZED:
+                default:
+                    DEBUG("Launching leaky_relu_forward_naive_kernel...");
+                    gridSize = (size + blockSize - 1) / blockSize;
+                    leaky_relu_forward_naive_kernel<<<gridSize, blockSize>>>(d_Z, d_A, d_alpha, size);
                     break;
             }
 
@@ -212,22 +207,17 @@ namespace activations {
             const int blockSize = 512;
             int gridSize;
             switch(strategy) {
-                case VAEStrategy::NAIVE:
-                case VAEStrategy::TILING: 
-                case VAEStrategy::PADDING: 
-                case VAEStrategy::REDUCTION: 
-                case VAEStrategy::UNROLLED_REDUCTION: 
-                case VAEStrategy::WARP_REDUCTION: 
-                    DEBUG("Launching leaky_relu_backward_naive_kernel...");
-                    gridSize = (size + blockSize - 1) / blockSize;
-                    leaky_relu_backward_naive_kernel<<<gridSize, blockSize>>>(d_Z, d_dA, d_dZ, d_alpha, size);
-                    break;
                 case VAEStrategy::VECTORIZED:
-                case VAEStrategy::OPTIMIZED:
-                default:
                     DEBUG("Launching leaky_relu_backward_vec4_kernel...");
                     gridSize = ((size + 3) / 4 + blockSize - 1) / blockSize;
                     leaky_relu_backward_vec4_kernel<<<gridSize, blockSize>>>(d_Z, d_dA, d_dZ, d_alpha, size);
+                    break;
+                case VAEStrategy::NAIVE:
+                case VAEStrategy::OPTIMIZED:
+                default: 
+                    DEBUG("Launching leaky_relu_backward_naive_kernel...");
+                    gridSize = (size + blockSize - 1) / blockSize;
+                    leaky_relu_backward_naive_kernel<<<gridSize, blockSize>>>(d_Z, d_dA, d_dZ, d_alpha, size);
                     break;
             }
 
@@ -269,22 +259,17 @@ namespace activations {
             const int blockSize = 512;
             int gridSize;
             switch(strategy) {
-                case VAEStrategy::NAIVE:
-                case VAEStrategy::TILING: 
-                case VAEStrategy::PADDING: 
-                case VAEStrategy::REDUCTION: 
-                case VAEStrategy::UNROLLED_REDUCTION: 
-                case VAEStrategy::WARP_REDUCTION: 
-                    DEBUG("Launching sigmoid_backward_naive_kernel...");
-                    gridSize = (size + blockSize - 1) / blockSize;
-                    sigmoid_backward_naive_kernel<<<gridSize, blockSize>>>(d_A, d_dA, d_dZ, size);
-                    break;
                 case VAEStrategy::VECTORIZED:
-                case VAEStrategy::OPTIMIZED: 
-                default:
                     DEBUG("Launching sigmoid_backward_vec4_kernel...");
                     gridSize = ((size + 3) / 4 + blockSize - 1) / blockSize;
                     sigmoid_backward_vec4_kernel<<<gridSize, blockSize>>>(d_A, d_dA, d_dZ, size);
+                    break;
+                case VAEStrategy::NAIVE:
+                case VAEStrategy::OPTIMIZED: 
+                default: 
+                    DEBUG("Launching sigmoid_backward_naive_kernel...");
+                    gridSize = (size + blockSize - 1) / blockSize;
+                    sigmoid_backward_naive_kernel<<<gridSize, blockSize>>>(d_A, d_dA, d_dZ, size);
                     break;
             }
             CUDA_CHECK(cudaGetLastError());
