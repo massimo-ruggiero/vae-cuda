@@ -136,7 +136,7 @@ __global__ void linear_lrelu_wmma_kernel(const float* __restrict__ X,
 __global__ void linear_sigmoid_wmma_kernel(const float* __restrict__ X, 
                                            const float* __restrict__ W, 
                                            const float* __restrict__ b, 
-                                           float* __restrict__ Z
+                                           float* __restrict__ Z,
                                            float* __restrict__ A, 
                                            int M, int K, int N) {
     wmma_linear_core(X, W, b, Z, A, 
