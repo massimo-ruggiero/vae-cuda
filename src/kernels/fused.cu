@@ -126,7 +126,7 @@ __global__ void linear_lrelu_wmma_kernel(const float* __restrict__ X,
                                          float* __restrict__ A, 
                                          int M, int K, int N, 
                                          float alpha) {
-    wmma_linear_core(X, W, b, A, 
+    wmma_linear_core(X, W, b, nullptr, A, 
                     M, K, N, 
                     [alpha] __device__ (float v) { 
                         return (v > 0.0f) ? v : v * alpha; 
@@ -139,7 +139,7 @@ __global__ void linear_sigmoid_wmma_kernel(const float* __restrict__ X,
                                            float* __restrict__ Z
                                            float* __restrict__ A, 
                                            int M, int K, int N) {
-    wmma_linear_core(X, W, b, A, 
+    wmma_linear_core(X, W, b, Z, A, 
                      M, K, N, 
                      [] __device__ (float v) { 
                         return 1.0f / (1.0f + __expf(-v)); 
@@ -151,7 +151,7 @@ __global__ void linear_wmma_kernel(const float* __restrict__ X,
                                    const float* __restrict__ b, 
                                     float* __restrict__ Z, 
                                     int M, int K, int N) {
-    wmma_linear_core(X, W, b, Z, 
+    wmma_linear_core(X, W, b, nullptr, Z, 
                      M, K, N, [] __device__ (float v) { 
                         return v; 
                     });
