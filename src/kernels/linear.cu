@@ -111,7 +111,7 @@ namespace linear {
                 add_bias_vec4_kernel<<<gridSize, blockSize>>>(d_Z, d_b, batch_size, output_dim);
                 break;
             case VAEStrategy::NAIVE:
-            case VAEStrategy::OPTIMIZED
+            case VAEStrategy::OPTIMIZED:
             default:
                 DEBUG("Launching add_bias_naive_kernel...");
                 gridSize = dim3((output_dim + blockSize.x - 1) / blockSize.x,
