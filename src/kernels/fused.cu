@@ -28,18 +28,18 @@ __device__ __forceinline__ void wmma_linear_core(const float* X,
                                                  float* A,
                                                  int M, int K, int N,
                                                  ActivationFunction fn) {
-    const int tid = threadIdx.x + threadIdx.y * blockDim.x;                 
-    const int lane_id = tid % WARP_SIZE;
-    const int warp_id = tid / WARP_SIZE;  
+    const int tid = threadIdx.x + threadIdx.y * blockDim.x;       // id nel blocco             
+    const int lane_id = tid % WARP_SIZE;                          // id nel warp
+    const int warp_id = tid / WARP_SIZE;                          // warp
 
     const int threads_per_block = blockDim.x * blockDim.y;
-    const int warps_per_block   = threads_per_block / WARP_SIZE;
+    const int warps_per_block   = threads_per_block / WARP_SIZE;  // warp per blocco
 
-    const int tile_y = blockIdx.y;
-    const int tile_x = blockIdx.x * warps_per_block + warp_id;
+    const int tile_y = blockIdx.y;                                // riga del tile (nella griglia di tiles)
+    const int tile_x = blockIdx.x * warps_per_block + warp_id;    // colonna del tile (nella griglia di tiles)
 
-    const int row0 = tile_y * TILE_DIM;   
-    const int col0 = tile_x * TILE_DIM;
+    const int row0 = tile_y * TILE_DIM;                           // riga nella matrice
+    const int col0 = tile_x * TILE_DIM;                           // colonna nella matrice
 
     if (row0 >= M || col0 >= N) return;
 
@@ -82,14 +82,11 @@ __device__ __forceinline__ void wmma_linear_core(const float* X,
             shmem_warp_W[c * TILE_DIM + r] = __float2half(w_val);
         }
 
-         __syncwarp();
 
         wmma::load_matrix_sync(a_frag, shmem_warp_X, TILE_DIM); // ld = 16
         wmma::load_matrix_sync(b_frag, shmem_warp_W, TILE_DIM); // ld = 16
 
         wmma::mma_sync(c_frag, a_frag, b_frag, c_frag);
-
-        __syncwarp();
     }
 
     float* shmem_out = reinterpret_cast<float*>(shmem_warp_base); 
@@ -176,7 +173,7 @@ namespace fused {
 
             dim3 gridSize(
                 (tiles_x + warps_per_block - 1) / warps_per_block,
-                tiles_y
+                 tiles_y
             );
 
             size_t shmem_size = warps_per_block * SHMEM_HALFS_PER_WARP * sizeof(half);
